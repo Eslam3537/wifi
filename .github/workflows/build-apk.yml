@@ -123,8 +123,14 @@ jobs:
             exit 1
           fi
 
+          APP_VER=$(grep -E 'versionName\s*=\s*' app/build.gradle.kts | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
+          if [ -z "$APP_VER" ]; then
+            APP_VER="6.0"
+          fi
+
           echo "apk_path=$TEMP_ASSET_DIR/app-debug.apk" >> "$GITHUB_OUTPUT"
-          echo "Prepared release asset at: $TEMP_ASSET_DIR/app-debug.apk"
+          echo "app_version=$APP_VER" >> "$GITHUB_OUTPUT"
+          echo "Prepared release asset at: $TEMP_ASSET_DIR/app-debug.apk (Version: $APP_VER)"
 
       - name: Publish GitHub Release
         id: publish_release
@@ -135,6 +141,11 @@ jobs:
           gh --version
           
           ASSET_FILE="${{ steps.prepare_asset.outputs.apk_path }}"
+          APP_VER="${{ steps.prepare_asset.outputs.app_version }}"
+          if [ -z "$APP_VER" ]; then
+            APP_VER="6.0"
+          fi
+
           if [ ! -f "$ASSET_FILE" ]; then
             echo "ERROR: Asset file not found at $ASSET_FILE"
             exit 1
@@ -150,17 +161,17 @@ jobs:
             *) echo "ERROR: Asset file name must be exactly app-debug.apk"; exit 1 ;;
           esac
 
-          RELEASE_TAG="debug-apk-build-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
-          RELEASE_TITLE="Debug APK Build #${GITHUB_RUN_NUMBER}"
+          RELEASE_TAG="v${APP_VER}-build-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+          RELEASE_TITLE="NetManager Pro v${APP_VER} (Build #${GITHUB_RUN_NUMBER})"
 
           NOTES=$(cat <<EOF
+          - NetManager Pro v${APP_VER} (Build #${GITHUB_RUN_NUMBER})
           - Automatically generated debug APK
+          - In-App update & Huawei HG630 V2 simulation supported
           - GitHub Actions run number: ${GITHUB_RUN_NUMBER}
           - GitHub Actions run attempt: ${GITHUB_RUN_ATTEMPT}
           - Source commit SHA: ${GITHUB_SHA}
-          - APK intended for testing
-          - Not a Play Store production release
-          - APK signed with a temporary debug keystore
+          - APK intended for direct installation and testing
           EOF
           )
 
