@@ -1,0 +1,6 @@
+{
+  "name": "NetManager Pro",
+  "description": "Professional Android Network Management, Diagnostics, and Security Gateway Auditor for Android 14-16",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

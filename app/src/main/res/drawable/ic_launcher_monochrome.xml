@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Primary Wi-Fi Wave Top -->
+    <path
+        android:pathData="M 35,43 C 40.2,37.8 46.8,34.8 54,34.8 C 61.2,34.8 67.8,37.8 73,43"
+        android:strokeColor="#000000"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round" />
+
+    <!-- Secondary Wi-Fi Wave Middle -->
+    <path
+        android:pathData="M 41,49 C 44.5,45.2 49,43 54,43 C 59,43 63.5,45.2 67,49"
+        android:strokeColor="#000000"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+
+    <!-- Tertiary Wi-Fi Wave Inner -->
+    <path
+        android:pathData="M 46.5,54.5 C 48.6,52.4 51.2,51.2 54,51.2 C 56.8,51.2 59.4,52.4 61.5,54.5"
+        android:strokeColor="#000000"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round" />
+
+    <!-- Network Mesh Connecting Lines -->
+    <path
+        android:pathData="M 54,60 L 38,70 M 54,60 L 70,70 M 54,60 L 54,74"
+        android:strokeColor="#000000"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round" />
+
+    <!-- Network Perimeter Base Arc -->
+    <path
+        android:pathData="M 38,70 Q 54,78 70,70"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+
+    <!-- Central Gateway Hub Node -->
+    <path
+        android:pathData="M 54,56 A 4,4 0 1,1 53.99,56 Z"
+        android:fillColor="#000000" />
+
+    <!-- Satellite Client Node Left -->
+    <path
+        android:pathData="M 38,66.5 A 3.5,3.5 0 1,1 37.99,66.5 Z"
+        android:fillColor="#000000" />
+
+    <!-- Satellite Client Node Right -->
+    <path
+        android:pathData="M 70,66.5 A 3.5,3.5 0 1,1 69.99,66.5 Z"
+        android:fillColor="#000000" />
+
+    <!-- Security Gateway Node Bottom -->
+    <path
+        android:pathData="M 54,70.5 A 3.5,3.5 0 1,1 53.99,70.5 Z"
+        android:fillColor="#000000" />
+</vector>

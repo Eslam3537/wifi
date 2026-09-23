@@ -1,0 +1,281 @@
+<resources>
+    <string name="app_name">NetManager Pro</string>
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_devices">Devices</string>
+    <string name="nav_diagnostics">Diagnostics</string>
+    <string name="nav_security">Security</string>
+    <string name="nav_router">Router</string>
+    <string name="nav_compatibility">Compatibility</string>
+    <string name="nav_logs">Logs</string>
+
+    <string name="status_online">Online</string>
+    <string name="status_offline">Offline</string>
+    <string name="status_unresponsive">Unresponsive</string>
+
+    <string name="scan_network">Scan Network</string>
+    <string name="scanning">Scanning…</string>
+    <string name="stop_scan">Stop Scan</string>
+    <string name="total_devices">Total Devices</string>
+    <string name="active_gateway">Active Gateway</string>
+    <string name="current_ip">Device IP</string>
+    <string name="subnet_mask">Subnet</string>
+
+    <string name="mac_unavailable">Unavailable on this Android version</string>
+    <string name="unknown_manufacturer">Unknown manufacturer</string>
+    <string name="unknown_device">Unknown Device</string>
+    <string name="device_name_unavailable">Name Unavailable</string>
+    <string name="gateway_device">Default Gateway</string>
+    <string name="this_device">This Device</string>
+    <string name="view_all">View All</string>
+    <string name="search_devices_placeholder">Search by IP, name, or manufacturer…</string>
+    <string name="select_all">Select All</string>
+    <string name="clear_selection">Clear Selection</string>
+    <string name="no_devices_discovered">No devices discovered yet. Tap Scan Network to start.</string>
+
+    <string name="device_details">Device Details</string>
+    <string name="device_management">Device Management</string>
+    <string name="device_diagnostics">Device Diagnostics</string>
+    <string name="open_ports">Open Ports</string>
+    <string name="discovery_methods">Discovery Methods</string>
+
+    <string name="block_device">Block Device</string>
+    <string name="unblock_device">Unblock Device</string>
+    <string name="speed_control">Bandwidth Control</string>
+    <string name="netlock">NetLock</string>
+    <string name="unsupported_router_api">Unsupported — Router API unavailable</string>
+    <string name="not_implemented_desc">NOT IMPLEMENTED — Client-side simulation disabled</string>
+    <string name="netlock_disabled_desc">NOT IMPLEMENTED — NetLock simulation disabled to comply with network protocol security.</string>
+
+    <string name="diagnostics_target">Diagnostics Target</string>
+    <string name="target_host">Target Host / IP</string>
+    <string name="measuring_latency">Measuring Latency &amp; Throughput…</string>
+    <string name="live_telemetry">Live Network Telemetry</string>
+    <string name="ping_latency">Ping Latency</string>
+    <string name="jitter">Jitter</string>
+    <string name="packet_loss">Packet Loss</string>
+    <string name="dns_benchmark">DNS Benchmark</string>
+    <string name="speed_test">Speed Test</string>
+    <string name="download_speed">Cloudflare Throughput Speed</string>
+    <string name="run_diagnostics">Run Diagnostics</string>
+    <string name="measured">Measured</string>
+    <string name="unavailable">Unavailable</string>
+    <string name="blocked">Blocked</string>
+    <string name="timed_out">Timed Out</string>
+
+    <string name="security_alerts">Security Alerts</string>
+    <string name="security_watcher">Active Network Security Watcher</string>
+    <string name="security_watcher_desc">Continuous ARP Cache &amp; Gateway Tampering Inspection</string>
+    <string name="monitored_gateway">Monitored Gateway</string>
+    <string name="active_dns">Active DNS Servers</string>
+    <string name="mac_watch_desc">Real ARP only (Android 10+ restricted; no simulated spoofing)</string>
+    <string name="no_threats">No anomalies detected</string>
+    <string name="no_threats_desc">No ARP spoofing or DNS poisoning anomalies detected.</string>
+    <string name="evidence">Evidence</string>
+    <string name="confidence">Confidence</string>
+    <string name="recommended_action">Action</string>
+
+    <string name="router_control">Router Management</string>
+    <string name="router_detection">Router Interface Detection</string>
+    <string name="gateway_endpoint">Gateway Control Endpoint (IPv4)</string>
+    <string name="probing_gateway">Probing Gateway…</string>
+    <string name="capability_result">Capability Audit Result</string>
+    <string name="probe_router">Probe Router API</string>
+    <string name="router_model">Model / Interface</string>
+    <string name="router_supported">Supported</string>
+    <string name="router_unsupported">Your router does not expose a supported control interface.</string>
+
+    <!-- Router HG630 V2 Client Strings -->
+    <string name="router_connection_title">Router Connection</string>
+    <string name="router_connection_subtitle">Direct local control for Huawei HG630 V2 and compatible gateways</string>
+    <string name="router_ip_label">Router IP / Address</string>
+    <string name="router_username_label">Admin Username</string>
+    <string name="router_password_label">Admin Password</string>
+    <string name="router_connect_button">Connect to Router</string>
+    <string name="router_connecting_state">Connecting to Gateway…</string>
+    <string name="router_authenticating_state">Authenticating with HG630 V2…</string>
+    <string name="router_disconnect_button">Disconnect Session</string>
+    <string name="router_remember_creds">Save credentials securely (Android Keystore)</string>
+    <string name="router_tab_overview">Overview</string>
+    <string name="router_tab_wifi">Wi-Fi Control</string>
+    <string name="router_tab_devices">Connected Devices</string>
+    <string name="router_wan_status">WAN Internet</string>
+    <string name="router_lan_status">LAN Network</string>
+    <string name="router_wifi_status">Wi-Fi Radio</string>
+    <string name="router_uptime">Router Uptime</string>
+    <string name="router_firmware">Firmware Version</string>
+    <string name="router_hardware">Hardware Version</string>
+    <string name="router_serial">Serial Number</string>
+    <string name="router_wan_ip">WAN IP Address</string>
+    <string name="router_dns_primary">Primary DNS</string>
+    <string name="router_dns_secondary">Secondary DNS</string>
+    <string name="router_lan_ip">LAN Gateway IP</string>
+    <string name="router_dhcp_range">DHCP Range</string>
+    <string name="router_wifi_ssid">Network Name (SSID)</string>
+    <string name="router_wifi_channel">Wireless Channel</string>
+    <string name="router_wifi_security">Security Mode</string>
+    <string name="router_wifi_enable">Wi-Fi State</string>
+    <string name="router_edit_wifi">Edit Wi-Fi Settings</string>
+    <string name="router_change_wifi_title">Modify Wi-Fi Configuration</string>
+    <string name="router_new_ssid">New SSID Name</string>
+    <string name="router_new_password">New Wi-Fi Password (leave empty to keep current)</string>
+    <string name="router_apply_changes">Apply Changes</string>
+    <string name="router_confirm_change_title">Confirm Wi-Fi Change</string>
+    <string name="router_confirm_change_desc">Applying new Wi-Fi settings will temporarily reconnect wireless clients. Proceed with the changes?</string>
+    <string name="router_reboot_button">Reboot Router</string>
+    <string name="router_reboot_confirm_title">Reboot Gateway</string>
+    <string name="router_reboot_confirm_desc">Are you sure you want to reboot the Huawei HG630 V2 router? Connection will drop for approximately 2 minutes.</string>
+    <string name="router_not_available">Not available</string>
+    <string name="router_connected_badge">Connected to HG630 V2</string>
+    <string name="router_refresh_data">Refresh Telemetry</string>
+
+    <string name="root_status">Root Status</string>
+    <string name="ksu_status">KernelSU Status</string>
+    <string name="no_root">No Root</string>
+    <string name="root_available">Root Available</string>
+    <string name="root_denied">Root Denied</string>
+    <string name="root_unsupported">Root Unsupported</string>
+    <string name="ksu_not_detected">KernelSU Not Detected</string>
+    <string name="ksu_detected_no_perm">KernelSU Detected (No Permission)</string>
+    <string name="ksu_verified">KernelSU Verified</string>
+
+    <string name="compat_target">Target: POCO X7 Pro / HyperOS / Android 16</string>
+    <string name="clear_logs">Clear Logs</string>
+    <string name="no_logs_recorded">No activity logs recorded yet.</string>
+    <string name="developer_name">إسلام رمضان ربيع</string>
+    <string name="developer_info">Developer: إسلام رمضان ربيع</string>
+    <string name="about_developer">About &amp; Developer</string>
+
+    <string name="language_selection">Language / اللغة</string>
+    <string name="select_language">App Language</string>
+    <string name="lang_english">English</string>
+    <string name="lang_arabic">العربية</string>
+
+    <string name="current_device">CURRENT DEVICE</string>
+    <string name="protected_device">PROTECTED</string>
+    <string name="protect_device">Protect Device</string>
+    <string name="unprotect_device">Unprotect Device</string>
+    <string name="cannot_block_current_device">Cannot block current device: Protected to prevent disconnection.</string>
+    <string name="cannot_block_gateway">Cannot block default gateway.</string>
+    <string name="cannot_block_protected">Cannot block protected device.</string>
+    <string name="blocking_unsupported">BLOCKING UNSUPPORTED</string>
+    <string name="block_selected">Block Selected</string>
+    <string name="allow_selected">Allow Selected</string>
+    <string name="block_all_users">Block All Devices</string>
+    <string name="unblock_all_users">Unblock All Devices</string>
+    <string name="block_all_confirm_title">Confirm Block All Devices</string>
+    <string name="block_all_confirm_msg">Are you sure you want to block all devices? Current device, default gateway, and protected devices will be exempted.</string>
+    <string name="unblock_all_confirm_title">Confirm Unblock All Devices</string>
+    <string name="unblock_all_confirm_msg">Are you sure you want to restore access for all previously blocked devices?</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="capability_dashboard">Capability Dashboard</string>
+    <string name="status_supported">SUPPORTED</string>
+    <string name="status_limited">LIMITED</string>
+    <string name="status_restricted">RESTRICTED</string>
+    <string name="status_unsupported">UNSUPPORTED</string>
+    <string name="cap_root">Root Privileges</string>
+    <string name="cap_ksu">KernelSU Verification</string>
+    <string name="cap_network_scan">Network Scan</string>
+    <string name="cap_mdns">mDNS / ZeroConf (NSD)</string>
+    <string name="cap_tcp">TCP Port Scanning</string>
+    <string name="cap_icmp">ICMP Ping Reachability</string>
+    <string name="cap_mac">Hardware MAC Access</string>
+    <string name="cap_arp">Neighbor ARP Table</string>
+    <string name="cap_router">Router API Control</string>
+    <string name="cap_block_device">Block Device</string>
+    <string name="cap_block_all">Block All Users</string>
+
+    <string name="status_connected">Connected</string>
+    <string name="network_standby">Network Standby</string>
+    <string name="local_wifi_network">Local Wi-Fi Network</string>
+    <string name="network_disconnected">Network Disconnected</string>
+    <string name="system_capability_audit">System Capability &amp; Sandbox Audit</string>
+    <string name="target_architecture">Target Architecture: POCO X7 Pro / Dimensity 8400 Ultra</string>
+    <string name="reevaluate_capabilities">Re-evaluate System Capabilities</string>
+    <string name="android_restrictions_title">Android 14-16 API &amp; Security Restrictions</string>
+    <string name="arm64_execution">64-bit ARM Execution (ARM64-v8a)</string>
+    <string name="arm64_explanation">Dimensity 8400 Ultra requires pure 64-bit binaries. 32-bit execution is deprecated.</string>
+    <string name="mac_randomization_title">Hardware MAC Randomization</string>
+    <string name="mac_randomization_explanation">Android 10+ restricts access to real hardware MAC address without Device Owner privileges. Returns dummy or null.</string>
+    <string name="arp_sandbox_title">ARP Cache Sandbox (/proc/net/arp)</string>
+    <string name="arp_sandbox_explanation">SELinux untrusted_app policy blocks read access to /proc/net/arp on Android 10-16. Unprivileged ARP inspection is unavailable.</string>
+    <string name="multicast_title">Local Network Multicast (mDNS / NSD)</string>
+    <string name="multicast_explanation">MulticastLock is acquired dynamically to allow discovery of mDNS / ZeroConf services on LAN.</string>
+    <string name="bg_exec_title">Background Execution Throttle</string>
+    <string name="bg_exec_explanation">HyperOS battery optimizations kill persistent background network sockets without foreground services.</string>
+    <string name="privilege_escalation_title">Privilege Escalation &amp; Root Diagnostics</string>
+    <string name="root_status_title">Root Privilege Status</string>
+    <string name="ksu_verification_title">KernelSU Verification</string>
+    <string name="root_mac_note">Note: If Root is verified, NetManager Pro uses privileged \'ip neigh\' commands to resolve actual hardware MAC addresses legitimately.</string>
+    <string name="requires_wan">Requires WAN</string>
+    <string name="upload_speed_unsupported">Upload speed: Unsupported — Requires authenticated server socket endpoint.</string>
+    <string name="endpoint">Endpoint</string>
+    <string name="protocol">Protocol</string>
+    <string name="technical_findings">Technical Findings:</string>
+    <string name="router_admin_credentials">Router Admin Credentials</string>
+    <string name="keystore_encryption_desc">Encrypted in hardware using Android Keystore (AES-256-GCM). Never stored in plaintext or logged.</string>
+    <string name="admin_username">Admin Username</string>
+    <string name="admin_password">Admin Password</string>
+    <string name="store_in_keystore">Store Securely in Keystore</string>
+    <string name="credentials_saved_success">✓ Credentials successfully encrypted and saved to Android Keystore.</string>
+    <string name="developer_information">Developer Information</string>
+    <string name="system_activity_logs">System Activity Logs</string>
+    <string name="hardware_mac_watch">Hardware MAC Watch</string>
+
+    <!-- Smart Exit & Background Protection -->
+    <string name="smart_exit_title">Active Network Protection</string>
+    <string name="smart_exit_question">Do you want to leave the app?</string>
+    <string name="smart_exit_summary">%1$d active network restrictions currently enforced.</string>
+    <string name="exit_restore_title">Exit &amp; Restore</string>
+    <string name="exit_restore_desc">Remove active restrictions created by the app and restore the normal network state.</string>
+    <string name="exit_keep_active_title">Exit &amp; Keep Protection Active</string>
+    <string name="exit_keep_active_desc">Close the app interface while keeping current restrictions active in the background.</string>
+    <string name="smart_exit_cancel_title">Cancel</string>
+    <string name="smart_exit_cancel_desc">Stay in the app.</string>
+    <string name="bg_protection_channel_name">Network Background Protection</string>
+    <string name="bg_protection_channel_desc">Maintains active device and network restrictions in background.</string>
+    <string name="bg_protection_notification_title">Active Network Protection</string>
+    <string name="bg_protection_notification_active">Enforcing restrictions on %1$d active target(s)</string>
+    <string name="bg_protection_notification_warning">Warning: %1$d of %2$d rules verified (check Root status)</string>
+    <string name="protection_active_banner">Protection Active in Background</string>
+    <string name="protection_active_banner_desc">%1$d device(s) or rule(s) currently restricted.</string>
+    <string name="manage_protection">Manage Protection</string>
+    <string name="active_enforced_rules">Active Enforced Rules</string>
+
+    <!-- Theme Selection -->
+    <string name="theme_mode">Appearance</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_toggle">Toggle Theme</string>
+
+    <!-- Diagnostics and Log Enhancements -->
+    <string name="logs_system_diagnostics">System Diagnostics &amp; Error Audit</string>
+    <string name="logs_diagnostics_subtitle">Real-time status of features, failure reasons, and system limits</string>
+    <string name="copy_all_diagnostics">Copy All Logs &amp; Diagnostics</string>
+    <string name="share_diagnostics">Share Diagnostic Report</string>
+    <string name="copy_reason">Copy Reason</string>
+    <string name="copy_log">Copy Log</string>
+    <string name="copied_toast">Copied to clipboard</string>
+    <string name="all_diagnostics_copied_toast">All logs and diagnostics copied to clipboard. Ready to paste!</string>
+    <string name="filter_all">All</string>
+    <string name="filter_errors">Errors &amp; Warnings</string>
+    <string name="filter_access">Blocking &amp; Access</string>
+    <string name="filter_traffic">Bandwidth</string>
+    <string name="filter_system">System</string>
+    <string name="cause_reason_label">Failure Reason / Cause:</string>
+    <string name="feature_status_summary">Feature Limitations &amp; Requirements</string>
+    <string name="features_restricted_note">If a feature does not work, its specific system reason is recorded here for easy copying and debugging.</string>
+
+    <!-- Permission Strings -->
+    <string name="permissions_required_title">Permissions Required</string>
+    <string name="permissions_required_desc">Location, Nearby Wi-Fi Devices, and Notification permissions are needed to discover local network devices and protect your connection.</string>
+    <string name="grant_permissions_action">Grant Permissions</string>
+    <string name="permissions_granted_toast">All required permissions granted successfully.</string>
+
+    <!-- Router Demo Mode Strings -->
+    <string name="router_demo_mode_button">Interactive Demo Mode</string>
+    <string name="router_demo_mode_desc">Preview HG630 V2 dashboard, Wi-Fi configuration &amp; connected devices</string>
+    <string name="router_demo_banner_title">Interactive Simulation Mode (Huawei HG630 V2)</string>
+    <string name="router_demo_banner_desc">Running in sandbox preview mode. To manage your real hardware router, install the APK on an Android device connected to your home Wi-Fi.</string>
+</resources>

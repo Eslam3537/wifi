@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Primary Wi-Fi Wave Top (Crisp White with Maximum Contrast) -->
+    <path
+        android:pathData="M 35,43 C 40.2,37.8 46.8,34.8 54,34.8 C 61.2,34.8 67.8,37.8 73,43"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round" />
+
+    <!-- Secondary Wi-Fi Wave Middle (Vibrant Electric Cyan) -->
+    <path
+        android:pathData="M 41,49 C 44.5,45.2 49,43 54,43 C 59,43 63.5,45.2 67,49"
+        android:strokeColor="#00F0FF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+
+    <!-- Tertiary Wi-Fi Wave Inner (Sky Blue Glow) -->
+    <path
+        android:pathData="M 46.5,54.5 C 48.6,52.4 51.2,51.2 54,51.2 C 56.8,51.2 59.4,52.4 61.5,54.5"
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round" />
+
+    <!-- Network Topology Mesh Links (Cyan/Blue Connection vectors) -->
+    <path
+        android:pathData="M 54,60 L 38,70 M 54,60 L 70,70 M 54,60 L 54,74"
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="2.4"
+        android:strokeAlpha="0.85"
+        android:strokeLineCap="round" />
+
+    <!-- Network Security Perimeter Base Arch -->
+    <path
+        android:pathData="M 38,70 Q 54,78 70,70"
+        android:strokeColor="#0A84FF"
+        android:strokeWidth="2"
+        android:strokeAlpha="0.7"
+        android:strokeLineCap="round" />
+
+    <!-- Central Gateway Hub Node Outer -->
+    <path
+        android:pathData="M 54,56 A 4.2,4.2 0 1,1 53.99,56 Z"
+        android:fillColor="#00F0FF" />
+    <!-- Central Gateway Hub Node Core -->
+    <path
+        android:pathData="M 54,58.2 A 2,2 0 1,1 53.99,58.2 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Satellite Client Node Left Outer -->
+    <path
+        android:pathData="M 38,66.5 A 3.5,3.5 0 1,1 37.99,66.5 Z"
+        android:fillColor="#0A84FF" />
+    <!-- Satellite Client Node Left Core -->
+    <path
+        android:pathData="M 38,68.5 A 1.5,1.5 0 1,1 37.99,68.5 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Satellite Client Node Right Outer -->
+    <path
+        android:pathData="M 70,66.5 A 3.5,3.5 0 1,1 69.99,66.5 Z"
+        android:fillColor="#0A84FF" />
+    <!-- Satellite Client Node Right Core -->
+    <path
+        android:pathData="M 70,68.5 A 1.5,1.5 0 1,1 69.99,68.5 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Security Gateway Node Bottom Outer -->
+    <path
+        android:pathData="M 54,70.5 A 3.5,3.5 0 1,1 53.99,70.5 Z"
+        android:fillColor="#38BDF8" />
+    <!-- Security Gateway Node Bottom Core -->
+    <path
+        android:pathData="M 54,72.5 A 1.5,1.5 0 1,1 53.99,72.5 Z"
+        android:fillColor="#FFFFFF" />
+
+</vector>
