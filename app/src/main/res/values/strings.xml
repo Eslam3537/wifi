@@ -278,4 +278,20 @@
     <string name="router_demo_mode_desc">Preview HG630 V2 dashboard, Wi-Fi configuration &amp; connected devices</string>
     <string name="router_demo_banner_title">Interactive Simulation Mode (Huawei HG630 V2)</string>
     <string name="router_demo_banner_desc">Running in sandbox preview mode. To manage your real hardware router, install the APK on an Android device connected to your home Wi-Fi.</string>
+    <!-- In-App Update Strings -->
+    <string name="check_for_updates">Check for Updates</string>
+    <string name="checking_updates">Checking for updates…</string>
+    <string name="update_available_title">New Update Available</string>
+    <string name="update_available_desc">A new version (%1$s) is ready for download with new features and bug fixes.</string>
+    <string name="download_and_install">Download &amp; Install</string>
+    <string name="downloading_update">Downloading update… %1$d%%</string>
+    <string name="install_update_now">Install Update Now</string>
+    <string name="app_is_up_to_date">App is up to date (v%1$s)</string>
+    <string name="update_ready_title">Update Downloaded</string>
+    <string name="update_ready_desc">The latest version is ready to be installed on your device.</string>
+    <string name="allow_install_unknown_apps">Enable Install Permission</string>
+    <string name="remind_me_later">Later</string>
+    <string name="release_notes_label">What\'s New:</string>
+    <string name="current_version_label">Current Version: %1$s (Build %2$d)</string>
+    <string name="github_repository_label">Repository: %1$s</string>
 </resources>

@@ -272,4 +272,26 @@
     <string name="permissions_required_desc">يحتاج التطبيق لصلاحيات الموقع، والبحث عن أجهزة Wi-Fi القريبة، والإشعارات للتعرف على جميع أجهزة الشبكة وتأمين الاتصال.</string>
     <string name="grant_permissions_action">منح الصلاحيات الآن</string>
     <string name="permissions_granted_toast">تم منح جميع الصلاحيات المطلوبة بنجاح.</string>
+    <!-- Router Demo Mode Strings -->
+    <string name="router_demo_mode_button">وضع المحاكاة التجريبي</string>
+    <string name="router_demo_mode_desc">استعراض لوحة تحكم راوتر HG630 V2 وإعدادات الواي فاي والأجهزة المتصلة</string>
+    <string name="router_demo_banner_title">وضع المحاكاة التفاعلي (Huawei HG630 V2)</string>
+    <string name="router_demo_banner_desc">يعمل التطبيق في وضع المعاينة التجريبي. لتوصيل راوترك الفعلي، ثبّت التطبيق على هاتف متصل بنفس شبكة الواي فاي المنزلية.</string>
+
+    <!-- In-App Update Strings -->
+    <string name="check_for_updates">التحقق من وجود تحديثات</string>
+    <string name="checking_updates">جاري البحث عن تحديثات جديدة…</string>
+    <string name="update_available_title">يوجد تحديث جديد للتطبيق</string>
+    <string name="update_available_desc">يتوفر إصدار أحدث (%1$s) يحتوي على ميزات جديدة وتحسينات واستقرار إضافي.</string>
+    <string name="download_and_install">تنزيل وتثبيت التحديث</string>
+    <string name="downloading_update">جاري تنزيل التحديث… %1$d%%</string>
+    <string name="install_update_now">تثبيت التحديث الآن</string>
+    <string name="app_is_up_to_date">التطبيق محدث إلى آخر إصدار (v%1$s)</string>
+    <string name="update_ready_title">اكتمل تنزيل التحديث</string>
+    <string name="update_ready_desc">ملف التحديث الأخير جاهز الآن للتثبيت على هاتفك بنقرة واحدة.</string>
+    <string name="allow_install_unknown_apps">تفعيل صلاحية تثبيت التحديثات</string>
+    <string name="remind_me_later">لاحقاً</string>
+    <string name="release_notes_label">ما الجديد في هذا الإصدار:</string>
+    <string name="current_version_label">الإصدار الحالي: %1$s (رقم البناء %2$d)</string>
+    <string name="github_repository_label">المستودع: %1$s</string>
 </resources>

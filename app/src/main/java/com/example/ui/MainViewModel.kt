@@ -32,6 +32,8 @@ import com.example.domain.router.RouterSettingsManager
 import com.example.domain.router.model.*
 import com.example.domain.security.NetworkSecurityMonitor
 import com.example.domain.security.ProtectedDevicesManager
+import com.example.domain.update.AppUpdateManager
+import com.example.domain.update.AppUpdateState
 import com.example.ui.theme.AppThemeMode
 import com.example.ui.theme.ThemeManager
 import com.example.model.*
@@ -43,11 +45,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
+
+    val appUpdateManager = AppUpdateManager(application)
+    val appUpdateState: StateFlow<AppUpdateState> = appUpdateManager.updateState
 
     private val db = AppDatabase.getInstance(application)
     private val deviceRepository = DeviceRepository(db.deviceDao())
@@ -199,8 +205,32 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             if (initial.isNotEmpty()) {
                 _currentOnlineDevices.value = initial
             }
+            // Silently check for GitHub releases in the background
+            checkForAppUpdates(silent = true)
         }
     }
+
+    fun checkForAppUpdates(silent: Boolean = false) {
+        viewModelScope.launch {
+            appUpdateManager.checkForUpdates(silent)
+        }
+    }
+
+    fun downloadAppUpdate(downloadUrl: String) {
+        viewModelScope.launch {
+            appUpdateManager.downloadUpdate(downloadUrl)
+        }
+    }
+
+    fun installAppUpdate(apkFile: File) {
+        appUpdateManager.installApk(apkFile)
+    }
+
+    fun canRequestPackageInstalls(): Boolean = appUpdateManager.canRequestPackageInstalls()
+
+    fun openAppInstallPermissionSettings() = appUpdateManager.openInstallPermissionSettings()
+
+    fun dismissAppUpdateDialog() = appUpdateManager.resetState()
 
     fun refreshNetworkInfo() {
         val info = discoveryEngine.getActiveInterfaceInfo()

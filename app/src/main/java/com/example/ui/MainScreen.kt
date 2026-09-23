@@ -328,6 +328,17 @@ fun MainScreen(
                     }
                 )
             }
+
+            // In-App Update Dialog
+            val appUpdateState by viewModel.appUpdateState.collectAsState()
+            AppUpdateDialog(
+                updateState = appUpdateState,
+                onDownload = { url -> viewModel.downloadAppUpdate(url) },
+                onInstall = { file -> viewModel.installAppUpdate(file) },
+                onOpenPermissionSettings = { viewModel.openAppInstallPermissionSettings() },
+                canRequestInstall = viewModel.canRequestPackageInstalls(),
+                onDismiss = { viewModel.dismissAppUpdateDialog() }
+            )
         }
     }
 }
