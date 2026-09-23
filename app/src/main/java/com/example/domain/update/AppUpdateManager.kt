@@ -116,26 +116,42 @@ class AppUpdateManager(
     }
 
     private fun isRemoteVersionNewer(tagName: String): Boolean {
-        // Tag format example: debug-apk-build-1-1 or v6.1 or 6.1
-        val tagClean = tagName.removePrefix("v").removePrefix("V")
-        val buildMatch = Regex("""build-(\d+)-(\d+)""").find(tagClean)
-        if (buildMatch != null) {
-            val buildNum = buildMatch.groupValues[1].toIntOrNull() ?: 0
-            if (buildNum > currentVersionCode) return true
-        }
+        if (tagName.isBlank()) return false
 
-        val versionDigits = tagClean.split(".").mapNotNull { it.takeWhile { char -> char.isDigit() }.toIntOrNull() }
+        // Extract semantic version numbers from tag, e.g. "v6.1-build-3-1" or "6.0" or "debug-apk-build-2-1"
+        // Try matching explicit semver first: e.g. "6.1" or "v6.1.2"
+        val semverRegex = Regex("""(?:v|V)?(\d+)(?:\.(\d+))?(?:\.(\d+))?""")
+        val semverMatch = semverRegex.find(tagName)
+
+        val remoteMajor = semverMatch?.groupValues?.getOrNull(1)?.toIntOrNull() ?: 0
+        val remoteMinor = semverMatch?.groupValues?.getOrNull(2)?.toIntOrNull() ?: 0
+        val remotePatch = semverMatch?.groupValues?.getOrNull(3)?.toIntOrNull() ?: 0
+
         val currentDigits = currentVersionName.split(".").mapNotNull { it.takeWhile { char -> char.isDigit() }.toIntOrNull() }
+        val currentMajor = currentDigits.getOrElse(0) { 0 }
+        val currentMinor = currentDigits.getOrElse(1) { 0 }
+        val currentPatch = currentDigits.getOrElse(2) { 0 }
 
-        for (i in 0 until maxOf(versionDigits.size, currentDigits.size)) {
-            val remote = versionDigits.getOrElse(i) { 0 }
-            val current = currentDigits.getOrElse(i) { 0 }
-            if (remote > current) return true
-            if (remote < current) return false
+        // Compare semantic version
+        if (remoteMajor > currentMajor) return true
+        if (remoteMajor < currentMajor) return false
+
+        if (remoteMinor > currentMinor) return true
+        if (remoteMinor < currentMinor) return false
+
+        if (remotePatch > currentPatch) return true
+        if (remotePatch < currentPatch) return false
+
+        // If semver is equal (e.g. 6.0 == 6.0), check build number from tag e.g. build-15-1
+        val buildMatch = Regex("""build-(\d+)""").find(tagName)
+        if (buildMatch != null) {
+            val remoteBuild = buildMatch.groupValues[1].toIntOrNull() ?: 0
+            if (remoteBuild > currentVersionCode) return true
+            if (remoteBuild <= currentVersionCode) return false
         }
 
-        // If tag is non-empty and different from empty, offer it
-        return tagName.isNotBlank()
+        // Exact match or older version -> not newer
+        return false
     }
 
     suspend fun downloadUpdate(downloadUrl: String): Result<File> = withContext(Dispatchers.IO) {

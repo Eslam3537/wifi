@@ -57,9 +57,10 @@ fun AppUpdateDialog(
     onOpenPermissionSettings: () -> Unit,
     canRequestInstall: Boolean,
     onDismiss: () -> Unit,
+    currentVersionName: String = "6.0",
     modifier: Modifier = Modifier
 ) {
-    if (updateState is AppUpdateState.Idle || updateState is AppUpdateState.UpToDate) {
+    if (updateState is AppUpdateState.Idle) {
         return
     }
 
@@ -98,7 +99,7 @@ fun AppUpdateDialog(
                         .background(
                             when (updateState) {
                                 is AppUpdateState.Error -> MaterialTheme.colorScheme.errorContainer
-                                is AppUpdateState.ReadyToInstall -> MaterialTheme.colorScheme.primaryContainer
+                                is AppUpdateState.ReadyToInstall, is AppUpdateState.UpToDate -> MaterialTheme.colorScheme.primaryContainer
                                 else -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
                             }
                         ),
@@ -107,14 +108,14 @@ fun AppUpdateDialog(
                     Icon(
                         imageVector = when (updateState) {
                             is AppUpdateState.Error -> Icons.Default.ErrorOutline
-                            is AppUpdateState.ReadyToInstall -> Icons.Default.CheckCircle
+                            is AppUpdateState.ReadyToInstall, is AppUpdateState.UpToDate -> Icons.Default.CheckCircle
                             is AppUpdateState.Downloading -> Icons.Default.Download
                             else -> Icons.Default.SystemUpdate
                         },
                         contentDescription = null,
                         tint = when (updateState) {
                             is AppUpdateState.Error -> MaterialTheme.colorScheme.error
-                            is AppUpdateState.ReadyToInstall -> MaterialTheme.colorScheme.primary
+                            is AppUpdateState.ReadyToInstall, is AppUpdateState.UpToDate -> MaterialTheme.colorScheme.primary
                             else -> MaterialTheme.colorScheme.primary
                         },
                         modifier = Modifier.size(30.dp)
@@ -132,6 +133,31 @@ fun AppUpdateDialog(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.5.dp)
+                    }
+
+                    is AppUpdateState.UpToDate -> {
+                        Text(
+                            text = stringResource(R.string.app_is_up_to_date, currentVersionName),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.current_version_label, currentVersionName, 6),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(18.dp))
+                        Button(
+                            onClick = onDismiss,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
+                                .testTag("update_dialog_uptodate_button")
+                        ) {
+                            Text("OK")
+                        }
                     }
 
                     is AppUpdateState.UpdateAvailable -> {
