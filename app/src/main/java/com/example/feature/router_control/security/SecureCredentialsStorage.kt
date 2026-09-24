@@ -45,6 +45,7 @@ class SecureCredentialsStorage(context: Context) {
             .putString(KEY_USER, credentials.username)
             .putString(KEY_PASS, credentials.password)
             .putBoolean(KEY_REMEMBER, true)
+            .putString(KEY_PROTOCOL, credentials.protocol)
             .apply()
     }
 
@@ -53,12 +54,18 @@ class SecureCredentialsStorage(context: Context) {
         val user = prefs.getString(KEY_USER, null) ?: "admin"
         val pass = prefs.getString(KEY_PASS, null) ?: ""
         val remember = prefs.getBoolean(KEY_REMEMBER, true)
+        val protocol = prefs.getString(KEY_PROTOCOL, "http") ?: "http"
         return RouterCredentials(
             gatewayIp = ip,
             username = user,
             password = pass,
-            remember = remember
+            remember = remember,
+            protocol = protocol
         )
+    }
+
+    fun saveWorkingProtocol(protocol: String) {
+        prefs.edit().putString(KEY_PROTOCOL, protocol).apply()
     }
 
     fun clearCredentials() {
@@ -70,5 +77,6 @@ class SecureCredentialsStorage(context: Context) {
         private const val KEY_USER = "router_user"
         private const val KEY_PASS = "router_pass"
         private const val KEY_REMEMBER = "router_remember"
+        private const val KEY_PROTOCOL = "router_protocol"
     }
 }

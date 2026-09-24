@@ -49,6 +49,46 @@ class RouterControlFeatureTest {
         assertEquals("admin", creds.username)
         assertEquals("", creds.password)
         assertTrue(creds.remember)
+        assertEquals("http", creds.protocol)
+    }
+
+    @Test
+    fun testRouterHttpClientFactoryLocalGatewayValidation() {
+        // RFC 1918 LAN IPs should be allowed
+        assertTrue(com.example.feature.router_control.data.RouterHttpClientFactory.isAllowedLocalGateway("192.168.1.1"))
+        assertTrue(com.example.feature.router_control.data.RouterHttpClientFactory.isAllowedLocalGateway("10.0.0.1"))
+        assertTrue(com.example.feature.router_control.data.RouterHttpClientFactory.isAllowedLocalGateway("172.16.0.1"))
+        assertTrue(com.example.feature.router_control.data.RouterHttpClientFactory.isAllowedLocalGateway("127.0.0.1"))
+        assertTrue(com.example.feature.router_control.data.RouterHttpClientFactory.isAllowedLocalGateway("192.168.0.1", "192.168.0.1"))
+
+        // Public domains and external IPs MUST be rejected
+        assertFalse(com.example.feature.router_control.data.RouterHttpClientFactory.isAllowedLocalGateway("google.com"))
+        assertFalse(com.example.feature.router_control.data.RouterHttpClientFactory.isAllowedLocalGateway("github.com"))
+        assertFalse(com.example.feature.router_control.data.RouterHttpClientFactory.isAllowedLocalGateway("8.8.8.8"))
+        assertFalse(com.example.feature.router_control.data.RouterHttpClientFactory.isAllowedLocalGateway("142.250.180.14"))
+    }
+
+    @Test
+    fun testRouterSessionContextUrlBuilding() {
+        val credsHttp = RouterCredentials(gatewayIp = "192.168.1.1", protocol = "http")
+        val sessionHttp = com.example.feature.router_control.strategy.RouterSessionContext(
+            gatewayIp = "192.168.1.1",
+            credentials = credsHttp,
+            vendor = RouterVendor.HUAWEI,
+            protocol = "http"
+        )
+        assertEquals("http://192.168.1.1", sessionHttp.getBaseUrl())
+        assertEquals("http://192.168.1.1/index/login.cgi", sessionHttp.buildUrl("index/login.cgi"))
+
+        val credsHttps = RouterCredentials(gatewayIp = "https://192.168.1.1/", protocol = "https")
+        val sessionHttps = com.example.feature.router_control.strategy.RouterSessionContext(
+            gatewayIp = "https://192.168.1.1/",
+            credentials = credsHttps,
+            vendor = RouterVendor.ZTE,
+            protocol = "https"
+        )
+        assertEquals("https://192.168.1.1", sessionHttps.getBaseUrl())
+        assertEquals("https://192.168.1.1/getpage.gch?pid=1002", sessionHttps.buildUrl("/getpage.gch?pid=1002"))
     }
 
     @Test

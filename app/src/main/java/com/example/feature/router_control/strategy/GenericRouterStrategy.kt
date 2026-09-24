@@ -31,15 +31,20 @@ class GenericRouterStrategy : RouterStrategy {
         credentials: RouterCredentials
     ): Result<RouterSessionContext> = withContext(Dispatchers.IO) {
         try {
+            val cleanIp = gatewayIp.trim().removePrefix("http://").removePrefix("https://").trimEnd('/')
+            val proto = credentials.protocol.ifBlank { "http" }
+            val baseUrl = "$proto://$cleanIp"
+
             val session = RouterSessionContext(
-                gatewayIp = gatewayIp,
+                gatewayIp = cleanIp,
                 credentials = credentials,
-                vendor = RouterVendor.GENERIC
+                vendor = RouterVendor.GENERIC,
+                protocol = proto
             )
 
             // 1. First probe root HTML
             val probeReq = Request.Builder()
-                .url("http://$gatewayIp/")
+                .url("$baseUrl/")
                 .header("User-Agent", "Mozilla/5.0")
                 .build()
 
@@ -67,7 +72,12 @@ class GenericRouterStrategy : RouterStrategy {
             if (form != null) {
                 var action = form.attr("action")
                 if (action.isBlank()) action = "/"
-                val postUrl = if (action.startsWith("http")) action else "http://$gatewayIp/$action"
+                val postUrl = if (action.startsWith("http://") || action.startsWith("https://")) {
+                    action
+                } else {
+                    val cleanAction = action.removePrefix("/")
+                    "$baseUrl/$cleanAction"
+                }
 
                 val formBody = FormBody.Builder()
                 val userInputs = form.select("input[type=text], input[name*=user], input[name*=login], input[name*=name]")
@@ -112,7 +122,7 @@ class GenericRouterStrategy : RouterStrategy {
     ): Result<RouterStatusInfo> = withContext(Dispatchers.IO) {
         try {
             val req = Request.Builder()
-                .url("http://${session.gatewayIp}/")
+                .url(session.buildUrl(""))
                 .header("User-Agent", "Mozilla/5.0")
 
             val cookie = session.buildCookieHeader()
@@ -153,7 +163,7 @@ class GenericRouterStrategy : RouterStrategy {
     ): Result<List<RouterConnectedDevice>> = withContext(Dispatchers.IO) {
         try {
             val req = Request.Builder()
-                .url("http://${session.gatewayIp}/")
+                .url(session.buildUrl(""))
                 .header("User-Agent", "Mozilla/5.0")
 
             val cookie = session.buildCookieHeader()
@@ -219,7 +229,7 @@ class GenericRouterStrategy : RouterStrategy {
     ): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
             val req = Request.Builder()
-                .url("http://${session.gatewayIp}/reboot")
+                .url(session.buildUrl("reboot"))
                 .header("User-Agent", "Mozilla/5.0")
             session.authToken?.let { req.header("Authorization", it) }
             val resp = client.newCall(req.build()).execute()

@@ -10,5 +10,6 @@ data class RouterStatusInfo(
     val connectedDevicesCount: Int,
     val wifiChannel: String = "Auto",
     val uptime: String = "",
-    val firmwareVersion: String = ""
+    val firmwareVersion: String = "",
+    val protocol: String = "http"
 )

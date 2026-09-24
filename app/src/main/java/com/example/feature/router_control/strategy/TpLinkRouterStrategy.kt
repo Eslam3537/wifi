@@ -36,13 +36,17 @@ class TpLinkRouterStrategy : RouterStrategy {
         credentials: RouterCredentials
     ): Result<RouterSessionContext> = withContext(Dispatchers.IO) {
         try {
+            val cleanIp = gatewayIp.trim().removePrefix("http://").removePrefix("https://").trimEnd('/')
+            val proto = credentials.protocol.ifBlank { "http" }
+            val baseUrl = "$proto://$cleanIp"
+
             val authHeader = "Basic " + Base64.encodeToString(
                 "${credentials.username}:${credentials.password}".toByteArray(),
                 Base64.NO_WRAP
             )
 
             // Test authentication on status or login page
-            val testUrl = "http://$gatewayIp/userRpm/StatusRpm.htm"
+            val testUrl = "$baseUrl/userRpm/StatusRpm.htm"
             val request = Request.Builder()
                 .url(testUrl)
                 .header("Authorization", authHeader)
@@ -55,9 +59,10 @@ class TpLinkRouterStrategy : RouterStrategy {
             }
 
             val session = RouterSessionContext(
-                gatewayIp = gatewayIp,
+                gatewayIp = cleanIp,
                 credentials = credentials,
                 vendor = RouterVendor.TP_LINK,
+                protocol = proto,
                 authToken = authHeader
             )
 
@@ -80,7 +85,7 @@ class TpLinkRouterStrategy : RouterStrategy {
         session: RouterSessionContext
     ): Result<RouterStatusInfo> = withContext(Dispatchers.IO) {
         try {
-            val url = "http://${session.gatewayIp}/userRpm/StatusRpm.htm"
+            val url = session.buildUrl("userRpm/StatusRpm.htm")
             val reqBuilder = Request.Builder()
                 .url(url)
                 .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
@@ -147,7 +152,7 @@ class TpLinkRouterStrategy : RouterStrategy {
         session: RouterSessionContext
     ): Result<List<RouterConnectedDevice>> = withContext(Dispatchers.IO) {
         try {
-            val url = "http://${session.gatewayIp}/userRpm/AssignedIpAddrListRpm.htm"
+            val url = session.buildUrl("userRpm/AssignedIpAddrListRpm.htm")
             val reqBuilder = Request.Builder()
                 .url(url)
                 .header("User-Agent", "Mozilla/5.0")
@@ -229,7 +234,7 @@ class TpLinkRouterStrategy : RouterStrategy {
         newSsid: String?
     ): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val url = "http://${session.gatewayIp}/userRpm/WlanSecurityRpm.htm"
+            val url = session.buildUrl("userRpm/WlanSecurityRpm.htm")
             val form = FormBody.Builder()
                 .add("secType", "3") // WPA2-PSK
                 .add("pskSecret", newPassword)
@@ -259,7 +264,7 @@ class TpLinkRouterStrategy : RouterStrategy {
         blocked: Boolean
     ): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val url = "http://${session.gatewayIp}/userRpm/WlanMacFilterRpm.htm"
+            val url = session.buildUrl("userRpm/WlanMacFilterRpm.htm")
             val form = FormBody.Builder()
                 .add("Mac", mac.replace(":", "-"))
                 .add("Desc", "Blocked_via_App")
@@ -288,7 +293,7 @@ class TpLinkRouterStrategy : RouterStrategy {
         session: RouterSessionContext
     ): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val url = "http://${session.gatewayIp}/userRpm/SysRebootRpm.htm?Reboot=Reboot"
+            val url = session.buildUrl("userRpm/SysRebootRpm.htm?Reboot=Reboot")
             val reqBuilder = Request.Builder()
                 .url(url)
                 .header("User-Agent", "Mozilla/5.0")

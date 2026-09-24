@@ -20,7 +20,13 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
-import java.util.concurrent.TimeUnit
+import java.net.ConnectException
+import java.net.NoRouteToHostException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
+import java.security.cert.CertPathValidatorException
+import javax.net.ssl.SSLException
+import javax.net.ssl.SSLHandshakeException
 
 class RouterRepositoryImpl(
     private val context: Context
@@ -28,13 +34,8 @@ class RouterRepositoryImpl(
 
     private val secureStorage = SecureCredentialsStorage(context)
 
-    private val httpClient: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(8, TimeUnit.SECONDS)
-        .readTimeout(15, TimeUnit.SECONDS)
-        .writeTimeout(15, TimeUnit.SECONDS)
-        .followRedirects(true)
-        .followSslRedirects(true)
-        .build()
+    // Current active client strictly isolated to router_control operations
+    private var activeClient: OkHttpClient = RouterHttpClientFactory.standardHttpClient
 
     private val _uiState = MutableStateFlow<RouterUiState>(RouterUiState.Idle)
     override val uiState: StateFlow<RouterUiState> = _uiState.asStateFlow()
@@ -44,12 +45,170 @@ class RouterRepositoryImpl(
     private var currentStatus: RouterStatusInfo? = null
     private var currentDevices: MutableList<RouterConnectedDevice> = mutableListOf()
 
+    private data class ProtocolProbeResult(
+        val protocol: String,
+        val client: OkHttpClient,
+        val initialHtml: String = "",
+        val headers: Map<String, List<String>> = emptyMap(),
+        val serverHeader: String = ""
+    )
+
     override fun isConnectedToLocalWifi(): Boolean {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
         val activeNetwork = cm.activeNetwork ?: return false
         val capabilities = cm.getNetworkCapabilities(activeNetwork) ?: return false
         return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+    }
+
+    private fun cleanGatewayIp(rawIp: String): String {
+        return rawIp.trim()
+            .removePrefix("http://")
+            .removePrefix("https://")
+            .trimEnd('/')
+    }
+
+    /**
+     * Probes the gateway using HTTP first, then falls back to HTTPS with self-signed SSL support.
+     * Respects previously saved protocol if available to avoid redundant probes.
+     */
+    private suspend fun resolveProtocolAndClient(
+        rawGatewayIp: String,
+        preferredProtocol: String? = null
+    ): Result<ProtocolProbeResult> = withContext(Dispatchers.IO) {
+        val cleanIp = cleanGatewayIp(rawGatewayIp)
+        if (cleanIp.isBlank()) {
+            return@withContext Result.failure(IllegalArgumentException("عنوان IP الخاص بالراوتر فارغ."))
+        }
+
+        val trimmedRaw = rawGatewayIp.trim().lowercase()
+        val explicitProtocol = when {
+            trimmedRaw.startsWith("https://") -> "https"
+            trimmedRaw.startsWith("http://") -> "http"
+            else -> null
+        }
+
+        // Determine protocol probe order
+        val effectivePreferred = explicitProtocol ?: preferredProtocol ?: "http"
+        val protocolsToTry = if (effectivePreferred.equals("https", ignoreCase = true)) {
+            listOf("https", "http")
+        } else {
+            listOf("http", "https")
+        }
+
+        var lastHttpException: Throwable? = null
+        var lastHttpsException: Throwable? = null
+        var detectedSslIssue = false
+
+        for (proto in protocolsToTry) {
+            if (proto == "http") {
+                try {
+                    val req = Request.Builder()
+                        .url("http://$cleanIp/")
+                        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+                        .build()
+
+                    val resp = RouterHttpClientFactory.standardHttpClient.newCall(req).execute()
+                    val html = resp.body?.string() ?: ""
+                    val headers = resp.headers.toMultimap()
+                    val server = resp.header("Server") ?: ""
+
+                    // Connection succeeded on HTTP!
+                    return@withContext Result.success(
+                        ProtocolProbeResult(
+                            protocol = "http",
+                            client = RouterHttpClientFactory.standardHttpClient,
+                            initialHtml = html,
+                            headers = headers,
+                            serverHeader = server
+                        )
+                    )
+                } catch (e: Exception) {
+                    lastHttpException = e
+                }
+            } else if (proto == "https") {
+                // 1. Try standard CA-validated HTTPS first
+                try {
+                    val req = Request.Builder()
+                        .url("https://$cleanIp/")
+                        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+                        .build()
+
+                    val resp = RouterHttpClientFactory.standardHttpClient.newCall(req).execute()
+                    val html = resp.body?.string() ?: ""
+                    val headers = resp.headers.toMultimap()
+                    val server = resp.header("Server") ?: ""
+
+                    return@withContext Result.success(
+                        ProtocolProbeResult(
+                            protocol = "https",
+                            client = RouterHttpClientFactory.standardHttpClient,
+                            initialHtml = html,
+                            headers = headers,
+                            serverHeader = server
+                        )
+                    )
+                } catch (e: Exception) {
+                    lastHttpsException = e
+
+                    // 2. If standard HTTPS threw SSL / CertPath / Handshake error, router has self-signed cert!
+                    val isSslError = e is SSLException ||
+                            e is SSLHandshakeException ||
+                            e is CertPathValidatorException ||
+                            (e.cause is CertPathValidatorException) ||
+                            (e.message?.contains("CertPathValidatorException", ignoreCase = true) == true) ||
+                            (e.message?.contains("Trust anchor", ignoreCase = true) == true)
+
+                    if (isSslError || e is IOException) {
+                        detectedSslIssue = true
+                        try {
+                            // Use isolated LAN self-signed router client
+                            val routerSslClient = RouterHttpClientFactory.createRouterSslClient(cleanIp)
+                            val req = Request.Builder()
+                                .url("https://$cleanIp/")
+                                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+                                .build()
+
+                            val resp = routerSslClient.newCall(req).execute()
+                            val html = resp.body?.string() ?: ""
+                            val headers = resp.headers.toMultimap()
+                            val server = resp.header("Server") ?: ""
+
+                            return@withContext Result.success(
+                                ProtocolProbeResult(
+                                    protocol = "https",
+                                    client = routerSslClient,
+                                    initialHtml = html,
+                                    headers = headers,
+                                    serverHeader = server
+                                )
+                            )
+                        } catch (sslFallbackEx: Exception) {
+                            lastHttpsException = sslFallbackEx
+                        }
+                    }
+                }
+            }
+        }
+
+        // Both HTTP and HTTPS failed: Analyze failure to give specific human message
+        val isUnreachable = (lastHttpException is ConnectException || lastHttpException is SocketTimeoutException ||
+                lastHttpException is UnknownHostException || lastHttpException is NoRouteToHostException) &&
+                (lastHttpsException is ConnectException || lastHttpsException is SocketTimeoutException ||
+                        lastHttpsException is UnknownHostException || lastHttpsException is NoRouteToHostException)
+
+        val failureMessage = when {
+            isUnreachable ->
+                "لا توجد استجابة من الراوتر على العنوان ($cleanIp). يرجى التأكد من صحة عنوان IP والاتصال بشبكة الواي فاي للراوتر."
+
+            detectedSslIssue && lastHttpsException != null ->
+                "فشل الاتصال المشفر بالراوتر عبر HTTPS (${lastHttpsException.localizedMessage}). يرجى التأكد من إعدادات الراوتر."
+
+            else ->
+                "تعذر الاتصال بصفحة الراوتر: ${lastHttpException?.localizedMessage ?: lastHttpsException?.localizedMessage ?: "تحقق من اتصال الشبكة"}"
+        }
+
+        Result.failure(IOException(failureMessage))
     }
 
     override suspend fun detectRouter(gatewayIp: String): Result<RouterVendor> = withContext(Dispatchers.IO) {
@@ -60,22 +219,20 @@ class RouterRepositoryImpl(
         }
 
         try {
-            val probeUrl = "http://$gatewayIp/"
-            val req = Request.Builder()
-                .url(probeUrl)
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-                .build()
+            val cleanIp = cleanGatewayIp(gatewayIp)
+            val savedCreds = secureStorage.getCredentials()
+            val probeResult = resolveProtocolAndClient(cleanIp, savedCreds?.protocol).getOrThrow()
 
-            val resp = httpClient.newCall(req).execute()
-            val serverHeader = resp.header("Server") ?: ""
-            val html = resp.body?.string() ?: ""
-
-            val strategy = RouterStrategyRegistry.findStrategy(html, resp.headers.toMultimap(), serverHeader)
+            activeClient = probeResult.client
+            val strategy = RouterStrategyRegistry.findStrategy(
+                probeResult.initialHtml,
+                probeResult.headers,
+                probeResult.serverHeader
+            )
             activeStrategy = strategy
 
             Result.success(strategy.vendor)
         } catch (e: Exception) {
-            // Even if direct probe times out, fallback to generic
             activeStrategy = RouterStrategyRegistry.getStrategyByVendor(RouterVendor.GENERIC)
             Result.success(RouterVendor.GENERIC)
         }
@@ -88,21 +245,63 @@ class RouterRepositoryImpl(
             return@withContext Result.failure(IllegalStateException(err))
         }
 
-        _uiState.value = RouterUiState.Loading("جاري الاتصال والتحقق من بيانات الراوتر…")
+        _uiState.value = RouterUiState.Loading("جاري فحص الاتصال بالراوتر (HTTP / HTTPS)…")
 
         try {
-            // 1. Detect or use existing strategy
-            var strategy = activeStrategy
-            if (strategy == null) {
-                detectRouter(credentials.gatewayIp)
-                strategy = activeStrategy ?: RouterStrategyRegistry.getStrategyByVendor(RouterVendor.GENERIC)
+            val cleanIp = cleanGatewayIp(credentials.gatewayIp)
+            val saved = secureStorage.getCredentials()
+            val preferredProtocol = if (credentials.protocol.isNotBlank() && credentials.protocol != "auto") {
+                credentials.protocol
+            } else {
+                saved?.protocol
             }
 
-            // 2. Perform authentication
-            val loginResult = strategy.login(httpClient, credentials.gatewayIp, credentials)
+            // 1. Auto-detect working protocol and appropriate OkHttpClient
+            val probeResolution = resolveProtocolAndClient(cleanIp, preferredProtocol)
+            if (probeResolution.isFailure) {
+                val err = probeResolution.exceptionOrNull()?.message
+                    ?: "تعذر الوصول إلى صفحة الراوتر. تحقق من عنوان IP واتصال الواي فاي."
+                _uiState.value = RouterUiState.Error(err)
+                return@withContext Result.failure(IOException(err))
+            }
+
+            val resolution = probeResolution.getOrThrow()
+            activeClient = resolution.client
+            val workingProtocol = resolution.protocol
+
+            _uiState.value = RouterUiState.Loading("تم تأمين الاتصال عبر ($workingProtocol). جاري تسجيل الدخول…")
+
+            // 2. Resolve Strategy
+            var strategy = activeStrategy
+            if (strategy == null) {
+                strategy = RouterStrategyRegistry.findStrategy(
+                    resolution.initialHtml,
+                    resolution.headers,
+                    resolution.serverHeader
+                )
+                activeStrategy = strategy
+            }
+
+            // 3. Perform authentication with the resolved protocol
+            val effectiveCredentials = credentials.copy(
+                gatewayIp = cleanIp,
+                protocol = workingProtocol
+            )
+
+            val loginResult = strategy.login(activeClient, cleanIp, effectiveCredentials)
             if (loginResult.isFailure) {
                 val ex = loginResult.exceptionOrNull()
-                val err = "فشل تسجيل الدخول: تحقق من عنوان IP واسم المستخدم وكلمة المرور (${ex?.message ?: "خطأ غير معروف"})"
+                val exMsg = ex?.message ?: ""
+                val isAuthFailure = exMsg.contains("credentials", ignoreCase = true) ||
+                        exMsg.contains("password", ignoreCase = true) ||
+                        exMsg.contains("401") || exMsg.contains("403")
+
+                val err = if (isAuthFailure) {
+                    "تم الاتصال بصفحة الراوتر ($workingProtocol) بنجاح، ولكن فشل تسجيل الدخول: اسم المستخدم أو كلمة المرور غير صحيحة."
+                } else {
+                    "فشل تسجيل الدخول: ${ex?.localizedMessage ?: "تحقق من بيانات الدخول"}"
+                }
+
                 _uiState.value = RouterUiState.Error(err)
                 return@withContext Result.failure(ex ?: IOException(err))
             }
@@ -110,28 +309,30 @@ class RouterRepositoryImpl(
             val session = loginResult.getOrThrow()
             activeSession = session
 
-            // 3. Save credentials if remember enabled
+            // 4. Save working credentials and protocol permanently if remember enabled
             if (credentials.remember) {
-                secureStorage.saveCredentials(credentials)
+                secureStorage.saveCredentials(effectiveCredentials)
             } else {
                 secureStorage.clearCredentials()
             }
+            secureStorage.saveWorkingProtocol(workingProtocol)
 
-            // 4. Fetch initial status and devices
-            val statusResult = strategy.fetchStatus(httpClient, session)
+            // 5. Fetch initial status and connected clients
+            val statusResult = strategy.fetchStatus(activeClient, session)
             val status = statusResult.getOrElse {
                 RouterStatusInfo(
                     isConnected = true,
                     vendor = strategy.vendor,
                     modelName = "${strategy.vendor.displayName} Gateway",
-                    gatewayIp = credentials.gatewayIp,
+                    gatewayIp = cleanIp,
                     wifiSsid = "Connected Wi-Fi",
                     wifiEnabled = true,
-                    connectedDevicesCount = 0
+                    connectedDevicesCount = 0,
+                    protocol = workingProtocol
                 )
-            }
+            }.copy(protocol = workingProtocol, gatewayIp = cleanIp)
 
-            val devicesResult = strategy.fetchConnectedDevices(httpClient, session)
+            val devicesResult = strategy.fetchConnectedDevices(activeClient, session)
             val devices = devicesResult.getOrDefault(emptyList()).toMutableList()
 
             val finalStatus = status.copy(
@@ -143,12 +344,14 @@ class RouterRepositoryImpl(
 
             _uiState.value = RouterUiState.Connected(
                 status = finalStatus,
-                devices = devices
+                devices = devices,
+                isPerformingAction = false,
+                actionFeedback = "تم الاتصال بنجاح عبر $workingProtocol"
             )
 
             Result.success(finalStatus)
         } catch (e: Exception) {
-            val errMsg = "تعذر الاتصال بصفحة الراوتر: ${e.localizedMessage ?: "تحقق من اتصال الواي فاي وعنوان IP"}"
+            val errMsg = e.localizedMessage ?: "تعذر الاتصال بصفحة الراوتر. تحقق من اتصال الواي فاي وعنوان IP."
             _uiState.value = RouterUiState.Error(errMsg)
             Result.failure(e)
         }
@@ -169,18 +372,21 @@ class RouterRepositoryImpl(
         }
 
         try {
-            val statusRes = strategy.fetchStatus(httpClient, session)
-            val devicesRes = strategy.fetchConnectedDevices(httpClient, session)
+            val statusRes = strategy.fetchStatus(activeClient, session)
+            val devicesRes = strategy.fetchConnectedDevices(activeClient, session)
 
-            val newStatus = statusRes.getOrElse { currentStatus ?: RouterStatusInfo(
-                isConnected = true,
-                vendor = strategy.vendor,
-                modelName = strategy.vendor.displayName,
-                gatewayIp = session.gatewayIp,
-                wifiSsid = "Home Wi-Fi",
-                wifiEnabled = true,
-                connectedDevicesCount = 0
-            ) }
+            val newStatus = statusRes.getOrElse {
+                currentStatus ?: RouterStatusInfo(
+                    isConnected = true,
+                    vendor = strategy.vendor,
+                    modelName = strategy.vendor.displayName,
+                    gatewayIp = session.gatewayIp,
+                    wifiSsid = "Home Wi-Fi",
+                    wifiEnabled = true,
+                    connectedDevicesCount = 0,
+                    protocol = session.protocol
+                )
+            }.copy(protocol = session.protocol, gatewayIp = session.gatewayIp)
 
             val newDevices = devicesRes.getOrDefault(currentDevices)
             val updatedStatus = newStatus.copy(connectedDevicesCount = newDevices.size)
@@ -213,7 +419,7 @@ class RouterRepositoryImpl(
             _uiState.value = currentState.copy(isPerformingAction = true, actionFeedback = "جاري إرسال أمر إعادة تشغيل الراوتر…")
         }
 
-        val res = strategy.restartRouter(httpClient, session)
+        val res = strategy.restartRouter(activeClient, session)
         if (res.isSuccess) {
             if (currentState is RouterUiState.Connected) {
                 _uiState.value = currentState.copy(
@@ -241,7 +447,7 @@ class RouterRepositoryImpl(
             _uiState.value = currentState.copy(isPerformingAction = true, actionFeedback = "جاري حفظ باسورد الواي فاي الجديد…")
         }
 
-        val res = strategy.changeWifiPassword(httpClient, session, newPassword, newSsid)
+        val res = strategy.changeWifiPassword(activeClient, session, newPassword, newSsid)
         if (res.isSuccess) {
             if (currentState is RouterUiState.Connected) {
                 val updatedStatus = currentState.status.copy(
@@ -276,7 +482,7 @@ class RouterRepositoryImpl(
             _uiState.value = currentState.copy(isPerformingAction = true, actionFeedback = "جاري $actionText الجهاز ${device.hostname}…")
         }
 
-        val res = strategy.setDeviceBlocked(httpClient, session, device.mac, newBlockedState)
+        val res = strategy.setDeviceBlocked(activeClient, session, device.mac, newBlockedState)
         if (res.isSuccess) {
             val updatedList = currentDevices.map {
                 if (it.mac.equals(device.mac, ignoreCase = true)) {
@@ -307,7 +513,7 @@ class RouterRepositoryImpl(
         val session = activeSession
         val strategy = activeStrategy
         if (session != null && strategy != null) {
-            strategy.logout(httpClient, session)
+            strategy.logout(activeClient, session)
         }
         activeSession = null
         currentStatus = null

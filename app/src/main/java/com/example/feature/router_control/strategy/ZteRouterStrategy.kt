@@ -35,13 +35,18 @@ class ZteRouterStrategy : RouterStrategy {
         credentials: RouterCredentials
     ): Result<RouterSessionContext> = withContext(Dispatchers.IO) {
         try {
+            val cleanIp = gatewayIp.trim().removePrefix("http://").removePrefix("https://").trimEnd('/')
+            val proto = credentials.protocol.ifBlank { "http" }
+            val baseUrl = "$proto://$cleanIp"
+
             val session = RouterSessionContext(
-                gatewayIp = gatewayIp,
+                gatewayIp = cleanIp,
                 credentials = credentials,
-                vendor = RouterVendor.ZTE
+                vendor = RouterVendor.ZTE,
+                protocol = proto
             )
 
-            val loginUrl = "http://$gatewayIp/getpage.gch?pid=1002"
+            val loginUrl = "$baseUrl/getpage.gch?pid=1002"
             val form = FormBody.Builder()
                 .add("Username", credentials.username)
                 .add("Password", credentials.password)
@@ -73,7 +78,7 @@ class ZteRouterStrategy : RouterStrategy {
         session: RouterSessionContext
     ): Result<RouterStatusInfo> = withContext(Dispatchers.IO) {
         try {
-            val url = "http://${session.gatewayIp}/getpage.gch?pid=1002&nextpage=net_wlan_basic_t.gch"
+            val url = session.buildUrl("getpage.gch?pid=1002&nextpage=net_wlan_basic_t.gch")
             val req = Request.Builder()
                 .url(url)
                 .header("User-Agent", "Mozilla/5.0")
@@ -109,7 +114,7 @@ class ZteRouterStrategy : RouterStrategy {
         session: RouterSessionContext
     ): Result<List<RouterConnectedDevice>> = withContext(Dispatchers.IO) {
         try {
-            val url = "http://${session.gatewayIp}/getpage.gch?pid=1002&nextpage=net_dhcp_client_t.gch"
+            val url = session.buildUrl("getpage.gch?pid=1002&nextpage=net_dhcp_client_t.gch")
             val req = Request.Builder()
                 .url(url)
                 .header("User-Agent", "Mozilla/5.0")
@@ -158,7 +163,7 @@ class ZteRouterStrategy : RouterStrategy {
         newSsid: String?
     ): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val url = "http://${session.gatewayIp}/getpage.gch?pid=1002&nextpage=net_wlan_security_t.gch"
+            val url = session.buildUrl("getpage.gch?pid=1002&nextpage=net_wlan_security_t.gch")
             val form = FormBody.Builder()
                 .add("WpaKey", newPassword)
                 .add("action", "apply")
@@ -186,7 +191,7 @@ class ZteRouterStrategy : RouterStrategy {
         blocked: Boolean
     ): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val url = "http://${session.gatewayIp}/getpage.gch?pid=1002&nextpage=sec_mac_filter_t.gch"
+            val url = session.buildUrl("getpage.gch?pid=1002&nextpage=sec_mac_filter_t.gch")
             val form = FormBody.Builder()
                 .add("MacAddress", mac)
                 .add("action", if (blocked) "block" else "unblock")
@@ -212,7 +217,7 @@ class ZteRouterStrategy : RouterStrategy {
         session: RouterSessionContext
     ): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val url = "http://${session.gatewayIp}/getpage.gch?pid=1002&nextpage=man_reboot_t.gch"
+            val url = session.buildUrl("getpage.gch?pid=1002&nextpage=man_reboot_t.gch")
             val form = FormBody.Builder()
                 .add("action", "reboot")
                 .build()

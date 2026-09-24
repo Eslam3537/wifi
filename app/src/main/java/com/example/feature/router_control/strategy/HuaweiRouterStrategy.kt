@@ -39,8 +39,12 @@ class HuaweiRouterStrategy : RouterStrategy {
         credentials: RouterCredentials
     ): Result<RouterSessionContext> = withContext(Dispatchers.IO) {
         try {
+            val cleanIp = gatewayIp.trim().removePrefix("http://").removePrefix("https://").trimEnd('/')
+            val proto = credentials.protocol.ifBlank { "http" }
+            val baseUrl = "$proto://$cleanIp"
+
             // First GET initial page to extract CSRF token / challenge if present
-            val initialUrl = "http://$gatewayIp/"
+            val initialUrl = "$baseUrl/"
             val initialReq = Request.Builder()
                 .url(initialUrl)
                 .header("User-Agent", "Mozilla/5.0")
@@ -50,9 +54,10 @@ class HuaweiRouterStrategy : RouterStrategy {
             val initialHtml = initialResp.body?.string() ?: ""
 
             val session = RouterSessionContext(
-                gatewayIp = gatewayIp,
+                gatewayIp = cleanIp,
                 credentials = credentials,
-                vendor = RouterVendor.HUAWEI
+                vendor = RouterVendor.HUAWEI,
+                protocol = proto
             )
 
             // Collect initial cookies
@@ -68,7 +73,7 @@ class HuaweiRouterStrategy : RouterStrategy {
             session.csrfToken = tokenMatch?.groupValues?.getOrNull(1)
 
             // Submit login POST
-            val loginUrl = "http://$gatewayIp/index/login.cgi"
+            val loginUrl = "$baseUrl/index/login.cgi"
             val form = FormBody.Builder()
                 .add("username", credentials.username)
                 .add("password", credentials.password)
@@ -112,7 +117,7 @@ class HuaweiRouterStrategy : RouterStrategy {
         session: RouterSessionContext
     ): Result<RouterStatusInfo> = withContext(Dispatchers.IO) {
         try {
-            val url = "http://${session.gatewayIp}/html/bbsp/wlaninfo/wlaninfo.asp"
+            val url = session.buildUrl("html/bbsp/wlaninfo/wlaninfo.asp")
             val reqBuilder = Request.Builder()
                 .url(url)
                 .header("User-Agent", "Mozilla/5.0")
@@ -158,7 +163,7 @@ class HuaweiRouterStrategy : RouterStrategy {
         session: RouterSessionContext
     ): Result<List<RouterConnectedDevice>> = withContext(Dispatchers.IO) {
         try {
-            val url = "http://${session.gatewayIp}/html/bbsp/userdevmngr/userdevmngr.asp"
+            val url = session.buildUrl("html/bbsp/userdevmngr/userdevmngr.asp")
             val reqBuilder = Request.Builder()
                 .url(url)
                 .header("User-Agent", "Mozilla/5.0")
@@ -211,7 +216,7 @@ class HuaweiRouterStrategy : RouterStrategy {
         newSsid: String?
     ): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val url = "http://${session.gatewayIp}/html/bbsp/wlaninfo/setwlan.cgi"
+            val url = session.buildUrl("html/bbsp/wlaninfo/setwlan.cgi")
             val form = FormBody.Builder()
                 .add("WpaPskKey", newPassword)
             if (!newSsid.isNullOrBlank()) {
@@ -241,7 +246,7 @@ class HuaweiRouterStrategy : RouterStrategy {
         blocked: Boolean
     ): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val url = "http://${session.gatewayIp}/html/bbsp/macfilter/setmacfilter.cgi"
+            val url = session.buildUrl("html/bbsp/macfilter/setmacfilter.cgi")
             val form = FormBody.Builder()
                 .add("MacAddress", mac)
                 .add("Action", if (blocked) "Add" else "Delete")
@@ -267,7 +272,7 @@ class HuaweiRouterStrategy : RouterStrategy {
         session: RouterSessionContext
     ): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val url = "http://${session.gatewayIp}/html/management/reboot.cgi"
+            val url = session.buildUrl("html/management/reboot.cgi")
             val form = FormBody.Builder()
                 .add("Reboot", "1")
             session.csrfToken?.let { form.add("csrf_token", it) }

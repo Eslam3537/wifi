@@ -831,9 +831,9 @@ private fun ConnectedStatusCard(
                     icon = Icons.Default.Dns
                 )
                 StatusMetricItem(
-                    label = "الأجهزة المتصلة",
-                    value = "${status.connectedDevicesCount} أجهزة",
-                    icon = Icons.Default.Devices
+                    label = "بروتوكول الاتصال",
+                    value = if (status.protocol.equals("https", ignoreCase = true)) "HTTPS (مشفر)" else "HTTP (مباشر)",
+                    icon = if (status.protocol.equals("https", ignoreCase = true)) Icons.Default.Lock else Icons.Default.Public
                 )
             }
         }

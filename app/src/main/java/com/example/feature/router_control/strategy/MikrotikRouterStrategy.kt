@@ -31,13 +31,17 @@ class MikrotikRouterStrategy : RouterStrategy {
         credentials: RouterCredentials
     ): Result<RouterSessionContext> = withContext(Dispatchers.IO) {
         try {
+            val cleanIp = gatewayIp.trim().removePrefix("http://").removePrefix("https://").trimEnd('/')
+            val proto = credentials.protocol.ifBlank { "http" }
+            val baseUrl = "$proto://$cleanIp"
+
             val auth = "Basic " + Base64.encodeToString(
                 "${credentials.username}:${credentials.password}".toByteArray(),
                 Base64.NO_WRAP
             )
 
             val req = Request.Builder()
-                .url("http://$gatewayIp/webfig/")
+                .url("$baseUrl/webfig/")
                 .header("Authorization", auth)
                 .header("User-Agent", "Mozilla/5.0")
                 .build()
@@ -48,9 +52,10 @@ class MikrotikRouterStrategy : RouterStrategy {
             }
 
             val session = RouterSessionContext(
-                gatewayIp = gatewayIp,
+                gatewayIp = cleanIp,
                 credentials = credentials,
                 vendor = RouterVendor.MIKROTIK,
+                protocol = proto,
                 authToken = auth
             )
 
@@ -94,7 +99,7 @@ class MikrotikRouterStrategy : RouterStrategy {
         try {
             // Read lease table via webfig/rest or HTML export
             val req = Request.Builder()
-                .url("http://${session.gatewayIp}/webfig/#IP:DHCP_Server.Leases")
+                .url(session.buildUrl("webfig/#IP:DHCP_Server.Leases"))
                 .header("User-Agent", "Mozilla/5.0")
 
             session.authToken?.let { req.header("Authorization", it) }
@@ -152,7 +157,7 @@ class MikrotikRouterStrategy : RouterStrategy {
     ): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
             val req = Request.Builder()
-                .url("http://${session.gatewayIp}/reboot")
+                .url(session.buildUrl("reboot"))
                 .header("User-Agent", "Mozilla/5.0")
             session.authToken?.let { req.header("Authorization", it) }
             val resp = client.newCall(req.build()).execute()
