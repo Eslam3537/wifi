@@ -36,9 +36,12 @@ import com.example.ui.components.AppUpdateDialog
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RouterControlScreen(
-    viewModel: RouterControlViewModel = viewModel(),
     onOpenClassicConfig: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: RouterControlViewModel = run {
+        val context = androidx.compose.ui.platform.LocalContext.current.applicationContext as android.app.Application
+        viewModel(factory = RouterControlViewModel.provideFactory(context))
+    }
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val credsInput by viewModel.credentialsInput.collectAsState()

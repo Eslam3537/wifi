@@ -16,11 +16,26 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class RouterControlViewModel(
+class RouterControlViewModel @JvmOverloads constructor(
     application: Application,
     private val repository: RouterRepository = RouterRepositoryImpl(application),
     val appUpdateManager: AppUpdateManager = AppUpdateManager(application)
 ) : AndroidViewModel(application) {
+
+    companion object {
+        fun provideFactory(
+            application: Application,
+            repository: RouterRepository? = null,
+            updateManager: AppUpdateManager? = null
+        ): androidx.lifecycle.ViewModelProvider.Factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                val repo = repository ?: RouterRepositoryImpl(application)
+                val mgr = updateManager ?: AppUpdateManager(application)
+                return RouterControlViewModel(application, repo, mgr) as T
+            }
+        }
+    }
 
     val uiState: StateFlow<RouterUiState> = repository.uiState
     val appUpdateState: StateFlow<AppUpdateState> = appUpdateManager.updateState
