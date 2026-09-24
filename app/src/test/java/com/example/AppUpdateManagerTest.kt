@@ -46,4 +46,32 @@ class AppUpdateManagerTest {
         assertEquals(750L, downloading.downloadedBytes)
         assertEquals("Network failure", error.message)
     }
+
+    @Test
+    fun testNetManagerProReleaseNamingFormat() {
+        val versionCode = 8
+        val apkFileName = "NetManager-Pro-v$versionCode.apk"
+        val releaseTag = "NetManager-Pro-v$versionCode"
+        val releaseTitle = "NetManager Pro v$versionCode"
+        val downloadUrl = "https://github.com/Eslam3537/wifi/releases/download/$releaseTag/$apkFileName"
+
+        val info = AppReleaseInfo(
+            tagName = releaseTag,
+            title = releaseTitle,
+            notes = "NetManager Pro v$versionCode",
+            downloadUrl = downloadUrl,
+            sizeBytes = 18_500_000L,
+            publishedAt = "2026-09-24T14:30:00Z",
+            remoteVersionCode = versionCode,
+            remoteVersionName = "v$versionCode",
+            isNewer = true
+        )
+
+        assertEquals("NetManager-Pro-v8", info.tagName)
+        assertEquals("NetManager Pro v8", info.title)
+        assertEquals("https://github.com/Eslam3537/wifi/releases/download/NetManager-Pro-v8/NetManager-Pro-v8.apk", info.downloadUrl)
+        assertEquals(8, info.remoteVersionCode)
+        assertEquals("v8", info.remoteVersionName)
+        assertTrue(info.isNewer)
+    }
 }

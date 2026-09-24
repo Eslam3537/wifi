@@ -77,76 +77,81 @@ jobs:
           echo "Persistent debug keystore verified and ready for signing."
 
       - name: Build debug APK
-        run: gradle :app:assembleDebug --stacktrace --no-daemon
+        env:
+          APP_VERSION_CODE: ${{ github.run_number }}
+          APP_VERSION_NAME: "v${{ github.run_number }}"
+        run: gradle :app:assembleDebug -PversionCode=${{ github.run_number }} -PversionName="v${{ github.run_number }}" --stacktrace --no-daemon
 
       - name: Validate APK
         run: |
+          VERSION_CODE="${{ github.run_number }}"
+          echo "Validating built APK for VersionCode: $VERSION_CODE..."
           TARGET_APK="app/build/outputs/apk/debug/app-debug.apk"
           if [ ! -f "$TARGET_APK" ]; then
-            echo "ERROR: Expected APK not found at $TARGET_APK"
-            echo "Searching only inside app/build/outputs/apk:"
-            find app/build/outputs/apk -maxdepth 4 -name "*.apk" 2>/dev/null || true
-            exit 1
+            TARGET_APK=$(find app/build/outputs/apk -type f -name "*.apk" | head -n 1)
           fi
 
-          if [ ! -s "$TARGET_APK" ]; then
-            echo "ERROR: APK file exists but is empty: $TARGET_APK"
+          if [ -z "$TARGET_APK" ] || [ ! -f "$TARGET_APK" ] || [ ! -s "$TARGET_APK" ]; then
+            echo "ERROR: Valid APK not found in app/build/outputs/apk."
             exit 1
           fi
-
-          case "$TARGET_APK" in
-            *.apk) ;;
-            *) echo "ERROR: File does not have .apk extension: $TARGET_APK"; exit 1 ;;
-          esac
 
           echo "APK successfully verified at $TARGET_APK ($(stat -c%s "$TARGET_APK") bytes)"
 
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: NetManager-Pro-v${{ github.run_number }}
+          path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
       - name: Prepare APK release asset & metadata
         id: prepare_asset
         run: |
+          VERSION_CODE="${{ github.run_number }}"
+          APK_NAME="NetManager-Pro-v${VERSION_CODE}.apk"
+          RELEASE_TAG="NetManager-Pro-v${VERSION_CODE}"
+          RELEASE_TITLE="NetManager Pro v${VERSION_CODE}"
+
           TEMP_ASSET_DIR="${RUNNER_TEMP}/release-assets"
           mkdir -p "$TEMP_ASSET_DIR"
-          cp "app/build/outputs/apk/debug/app-debug.apk" "$TEMP_ASSET_DIR/app-debug.apk"
 
-          if [ ! -f "$TEMP_ASSET_DIR/app-debug.apk" ] || [ ! -s "$TEMP_ASSET_DIR/app-debug.apk" ]; then
-            echo "ERROR: Failed to prepare temporary release asset."
+          SRC_APK="app/build/outputs/apk/debug/app-debug.apk"
+          if [ ! -f "$SRC_APK" ]; then
+            SRC_APK=$(find app/build/outputs/apk -type f -name "*.apk" | head -n 1)
+          fi
+
+          if [ -z "$SRC_APK" ] || [ ! -f "$SRC_APK" ] || [ ! -s "$SRC_APK" ]; then
+            echo "ERROR: Failed to locate compiled APK."
             exit 1
           fi
 
-          APP_VER=$(grep -E 'versionName\s*=\s*' app/build.gradle.kts | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')
-          if [ -z "$APP_VER" ]; then
-            APP_VER="6.0"
-          fi
+          # Copy to final release filename: NetManager-Pro-v{versionCode}.apk
+          cp "$SRC_APK" "$TEMP_ASSET_DIR/$APK_NAME"
 
-          BASE_CODE=$(grep -E 'versionCode\s*=\s*' app/build.gradle.kts | head -n 1 | grep -oE '[0-9]+' || echo "6")
-          # Ensure versionCode strictly ascends with every CI build
-          CALCULATED_CODE=$(( BASE_CODE > GITHUB_RUN_NUMBER ? BASE_CODE : GITHUB_RUN_NUMBER ))
-
-          RELEASE_TAG="v${APP_VER}-build-${CALCULATED_CODE}"
-          DIRECT_APK_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/app-debug.apk"
+          DIRECT_APK_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/${APK_NAME}"
+          LATEST_APK_URL="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/${APK_NAME}"
 
           cat << EOF > "$TEMP_ASSET_DIR/update-metadata.json"
           {
-            "versionCode": ${CALCULATED_CODE},
-            "versionName": "${APP_VER}",
+            "versionCode": ${VERSION_CODE},
+            "versionName": "v${VERSION_CODE}",
+            "apkFileName": "${APK_NAME}",
             "downloadUrl": "${DIRECT_APK_URL}",
-            "releaseNotes": "NetManager Pro v${APP_VER} (Build #${CALCULATED_CODE})"
+            "latestDownloadUrl": "${LATEST_APK_URL}",
+            "releaseTitle": "${RELEASE_TITLE}",
+            "releaseNotes": "NetManager Pro v${VERSION_CODE}"
           }
           EOF
 
-          echo "apk_path=$TEMP_ASSET_DIR/app-debug.apk" >> "$GITHUB_OUTPUT"
+          echo "apk_path=$TEMP_ASSET_DIR/$APK_NAME" >> "$GITHUB_OUTPUT"
+          echo "apk_name=$APK_NAME" >> "$GITHUB_OUTPUT"
           echo "meta_path=$TEMP_ASSET_DIR/update-metadata.json" >> "$GITHUB_OUTPUT"
-          echo "app_version=$APP_VER" >> "$GITHUB_OUTPUT"
-          echo "version_code=$CALCULATED_CODE" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "version_name=v$VERSION_CODE" >> "$GITHUB_OUTPUT"
           echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
-          echo "Prepared release assets at: $TEMP_ASSET_DIR (Version: $APP_VER, Code: $CALCULATED_CODE)"
+          echo "release_title=$RELEASE_TITLE" >> "$GITHUB_OUTPUT"
+          echo "Prepared release asset: $APK_NAME (Title: $RELEASE_TITLE)"
 
       - name: Publish GitHub Release
         id: publish_release
@@ -158,24 +163,23 @@ jobs:
           
           ASSET_FILE="${{ steps.prepare_asset.outputs.apk_path }}"
           META_FILE="${{ steps.prepare_asset.outputs.meta_path }}"
-          APP_VER="${{ steps.prepare_asset.outputs.app_version }}"
           VER_CODE="${{ steps.prepare_asset.outputs.version_code }}"
           RELEASE_TAG="${{ steps.prepare_asset.outputs.release_tag }}"
+          RELEASE_TITLE="${{ steps.prepare_asset.outputs.release_title }}"
+          APK_NAME="${{ steps.prepare_asset.outputs.apk_name }}"
 
           if [ ! -f "$ASSET_FILE" ] || [ ! -s "$ASSET_FILE" ]; then
             echo "ERROR: Asset file not found or empty at $ASSET_FILE"
             exit 1
           fi
 
-          RELEASE_TITLE="NetManager Pro v${APP_VER} (Build #${VER_CODE})"
-
           NOTES=$(cat <<EOF
-          ## NetManager Pro v${APP_VER}
-          - VersionCode: ${VER_CODE}
-          - VersionName: ${APP_VER}
-          - In-App upgrade compatible with persistent signing key
-          - Huawei HG630 V2 real integration & auto-discovery supported
-          - Source commit SHA: ${GITHUB_SHA}
+          ## ${RELEASE_TITLE}
+          - **File:** \`${APK_NAME}\`
+          - **Version Code:** \`${VER_CODE}\`
+          - **Version Name:** \`v${VER_CODE}\`
+          - **Commit SHA:** \`${GITHUB_SHA}\`
+          - In-app update supported with persistent signing keystore.
           EOF
           )
 
@@ -192,36 +196,34 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          VER_CODE="${{ github.run_number }}"
+          APK_NAME="NetManager-Pro-v${VER_CODE}.apk"
+          RELEASE_TAG="NetManager-Pro-v${VER_CODE}"
+          RELEASE_TITLE="NetManager Pro v${VER_CODE}"
+          DIRECT_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/${APK_NAME}"
+
           echo "=== APK Build & Release Summary ==="
           if [ "${{ steps.publish_release.outcome }}" = "success" ]; then
-            RELEASE_TAG="debug-apk-build-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
-            gh release view "$RELEASE_TAG" || true
-
-            DIRECT_URL="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/app-debug.apk"
             echo "Release Tag: $RELEASE_TAG"
-            echo "Release Title: Debug APK Build #${GITHUB_RUN_NUMBER}"
+            echo "Release Title: $RELEASE_TITLE"
             echo "Release URL: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_TAG}"
-            echo "APK Filename: app-debug.apk"
+            echo "APK Filename: $APK_NAME"
             echo "Direct Download URL: $DIRECT_URL"
-            echo "The Actions artifact app-debug-apk remains available as a backup."
 
             {
-              echo "## DIRECT APK DOWNLOAD"
+              echo "## 🚀 NetManager Pro Release Ready"
               echo ""
-              echo "[$DIRECT_URL]($DIRECT_URL)"
+              echo "### [Download $APK_NAME]($DIRECT_URL)"
               echo ""
-              echo "The Actions artifact **app-debug-apk** remains available as a backup."
+              echo "- **Release:** $RELEASE_TITLE"
+              echo "- **Version Code:** $VER_CODE"
+              echo "- **Direct Link:** \`$DIRECT_URL\`"
             } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "WARNING: GitHub Release publishing failed or was not completed."
-            if [ -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
-              echo "The debug APK was built successfully."
-              echo "The Actions artifact app-debug-apk remains available."
-            fi
             {
               echo "## APK Build Report"
               echo ""
               echo "⚠️ Release publishing failed."
-              echo "The Actions artifact **app-debug-apk** remains available in this workflow run."
             } >> "$GITHUB_STEP_SUMMARY"
           fi

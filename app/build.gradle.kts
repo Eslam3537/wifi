@@ -13,12 +13,24 @@ android {
   namespace = "com.example"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
+  val appVersionCode: Int = (
+    project.findProperty("versionCode") as? String
+      ?: System.getenv("APP_VERSION_CODE")
+      ?: System.getenv("GITHUB_RUN_NUMBER")
+  )?.toIntOrNull() ?: 7
+
+  val appVersionName: String = (
+    project.findProperty("versionName") as? String
+      ?: System.getenv("APP_VERSION_NAME")
+      ?: "v$appVersionCode"
+  )
+
   defaultConfig {
     applicationId = "com.aistudio.netmanagerpro.kxmpyr"
     minSdk = 24
     targetSdk = 36
-    versionCode = 6
-    versionName = "6.0"
+    versionCode = appVersionCode
+    versionName = appVersionName
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }

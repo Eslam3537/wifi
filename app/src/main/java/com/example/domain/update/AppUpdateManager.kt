@@ -158,14 +158,21 @@ class AppUpdateManager(
             if (code != null && code > 0) return code
         }
 
-        // 2. Look for "build-X" in tagName or title
+        // 2. Look for "NetManager Pro v(\d+)" or "NetManager-Pro-v(\d+)" or "v(\d+)" in title or tagName
+        val netManagerMatch = Regex("""(?i)(?:NetManager[- ]Pro[- ]v?|v|ver|build[- ])(\d+)""").find("$title $tagName")
+        if (netManagerMatch != null) {
+            val code = netManagerMatch.groupValues[1].toIntOrNull()
+            if (code != null && code > 0) return code
+        }
+
+        // 3. Look for "build-X" in tagName or title
         val buildMatch = Regex("""(?i)build-(\d+)""").find("$tagName $title")
         if (buildMatch != null) {
             val code = buildMatch.groupValues[1].toIntOrNull()
             if (code != null && code > 0) return code
         }
 
-        // 3. Look for "vX.Y.Z" and compute numeric fallback if no explicit code
+        // 4. Look for "vX.Y.Z" and compute numeric fallback if no explicit code
         val semverMatch = Regex("""(?:v|V)?(\d+)(?:\.(\d+))?(?:\.(\d+))?""").find(tagName)
         if (semverMatch != null) {
             val major = semverMatch.groupValues.getOrNull(1)?.toIntOrNull() ?: 0
@@ -178,11 +185,19 @@ class AppUpdateManager(
     }
 
     private fun extractVersionName(tagName: String, title: String): String {
+        val netManagerNameMatch = Regex("""(?i)NetManager\s*Pro\s*(v?\d+(?:\.\d+)?)""").find(title)
+        if (netManagerNameMatch != null) {
+            return netManagerNameMatch.groupValues[1]
+        }
         val semverMatch = Regex("""(?:v|V)?(\d+\.\d+(?:\.\d+)?)""").find("$tagName $title")
         if (semverMatch != null) {
             return semverMatch.groupValues[1]
         }
-        return tagName.removePrefix("v").removePrefix("V").ifBlank { currentVersionName }
+        val simpleVMatch = Regex("""(?i)\bv(\d+)\b""").find("$tagName $title")
+        if (simpleVMatch != null) {
+            return "v${simpleVMatch.groupValues[1]}"
+        }
+        return tagName.removePrefix("NetManager-Pro-").removePrefix("v").removePrefix("V").ifBlank { currentVersionName }
     }
 
     suspend fun downloadUpdate(downloadUrl: String): Result<File> = withContext(Dispatchers.IO) {
@@ -193,7 +208,12 @@ class AppUpdateManager(
             if (!updateDir.exists()) {
                 updateDir.mkdirs()
             }
-            val apkFile = File(updateDir, "app-debug.apk")
+            val apkFileName = if (downloadUrl.substringAfterLast("/").endsWith(".apk", ignoreCase = true)) {
+                downloadUrl.substringAfterLast("/")
+            } else {
+                "NetManager-Pro-update.apk"
+            }
+            val apkFile = File(updateDir, apkFileName)
             if (apkFile.exists()) {
                 apkFile.delete()
             }
