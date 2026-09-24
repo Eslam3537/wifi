@@ -57,7 +57,8 @@ fun AppUpdateDialog(
     onOpenPermissionSettings: () -> Unit,
     canRequestInstall: Boolean,
     onDismiss: () -> Unit,
-    currentVersionName: String = "6.0",
+    currentVersionName: String = com.example.BuildConfig.VERSION_NAME,
+    currentVersionCode: Int = com.example.BuildConfig.VERSION_CODE,
     modifier: Modifier = Modifier
 ) {
     if (updateState is AppUpdateState.Idle) {
@@ -143,7 +144,7 @@ fun AppUpdateDialog(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = stringResource(R.string.current_version_label, currentVersionName, 6),
+                            text = stringResource(R.string.current_version_label, currentVersionName, currentVersionCode),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -169,7 +170,7 @@ fun AppUpdateDialog(
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = stringResource(R.string.update_available_desc, release.tagName),
+                            text = stringResource(R.string.update_available_desc, release.remoteVersionName),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

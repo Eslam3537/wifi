@@ -59,6 +59,8 @@ class AppUpdateManager(
                 }
                 if (!silent) {
                     _updateState.value = AppUpdateState.Error(errorMsg)
+                } else {
+                    _updateState.value = AppUpdateState.Idle
                 }
                 return@withContext Result.failure(Exception(errorMsg))
             }
@@ -68,11 +70,13 @@ class AppUpdateManager(
 
             val tagName = json.optString("tag_name", "")
             val title = json.optString("name", "Update $tagName")
-            val notes = json.optString("body", "Bug fixes and performance improvements.")
+            val notes = json.optString("body", "")
             val publishedAt = json.optString("published_at", "")
 
             var downloadUrl = "https://github.com/$repositoryOwner/$repositoryName/releases/latest/download/app-debug.apk"
             var sizeBytes = 0L
+            var metadataVersionCode: Int? = null
+            var metadataVersionName: String? = null
 
             val assets = json.optJSONArray("assets")
             if (assets != null) {
@@ -82,27 +86,56 @@ class AppUpdateManager(
                     if (name.endsWith(".apk", ignoreCase = true)) {
                         downloadUrl = asset.optString("browser_download_url", downloadUrl)
                         sizeBytes = asset.optLong("size", 0L)
-                        break
+                    } else if (name.equals("update-metadata.json", ignoreCase = true) || name.equals("version.json", ignoreCase = true)) {
+                        val metaUrl = asset.optString("browser_download_url", "")
+                        if (metaUrl.isNotBlank()) {
+                            try {
+                                val metaReq = Request.Builder().url(metaUrl).build()
+                                val metaResp = client.newCall(metaReq).execute()
+                                if (metaResp.isSuccessful) {
+                                    val metaJson = JSONObject(metaResp.body?.string() ?: "")
+                                    if (metaJson.has("versionCode")) {
+                                        metadataVersionCode = metaJson.optInt("versionCode")
+                                    }
+                                    if (metaJson.has("versionName")) {
+                                        metadataVersionName = metaJson.optString("versionName")
+                                    }
+                                }
+                            } catch (_: Exception) {}
+                        }
                     }
                 }
             }
 
-            val isNewer = isRemoteVersionNewer(tagName)
+            // Determine remote version code and version name
+            val remoteVersionCode = metadataVersionCode ?: extractVersionCode(tagName, notes, title)
+            val remoteVersionName = metadataVersionName ?: extractVersionName(tagName, title)
+
+            // Strict numeric comparison: new versionCode > old versionCode
+            val isNewer = remoteVersionCode > currentVersionCode
 
             val releaseInfo = AppReleaseInfo(
                 tagName = tagName,
                 title = title,
-                notes = notes,
+                notes = if (notes.isNotBlank()) notes else "Version $remoteVersionName (Build #$remoteVersionCode)",
                 downloadUrl = downloadUrl,
                 sizeBytes = sizeBytes,
                 publishedAt = publishedAt,
+                remoteVersionCode = remoteVersionCode,
+                remoteVersionName = remoteVersionName,
                 isNewer = isNewer
             )
 
             if (isNewer) {
                 _updateState.value = AppUpdateState.UpdateAvailable(releaseInfo)
             } else {
-                _updateState.value = AppUpdateState.UpToDate
+                if (!silent) {
+                    // Manual check: Show "App is up to date"
+                    _updateState.value = AppUpdateState.UpToDate
+                } else {
+                    // Silent background check: Stay Idle (NO UI, NO Dialog, NO Toast)
+                    _updateState.value = AppUpdateState.Idle
+                }
             }
 
             Result.success(releaseInfo)
@@ -110,48 +143,46 @@ class AppUpdateManager(
             val error = e.localizedMessage ?: "Failed to check for updates."
             if (!silent) {
                 _updateState.value = AppUpdateState.Error(error)
+            } else {
+                _updateState.value = AppUpdateState.Idle
             }
             Result.failure(e)
         }
     }
 
-    private fun isRemoteVersionNewer(tagName: String): Boolean {
-        if (tagName.isBlank()) return false
-
-        // Extract semantic version numbers from tag, e.g. "v6.1-build-3-1" or "6.0" or "debug-apk-build-2-1"
-        // Try matching explicit semver first: e.g. "6.1" or "v6.1.2"
-        val semverRegex = Regex("""(?:v|V)?(\d+)(?:\.(\d+))?(?:\.(\d+))?""")
-        val semverMatch = semverRegex.find(tagName)
-
-        val remoteMajor = semverMatch?.groupValues?.getOrNull(1)?.toIntOrNull() ?: 0
-        val remoteMinor = semverMatch?.groupValues?.getOrNull(2)?.toIntOrNull() ?: 0
-        val remotePatch = semverMatch?.groupValues?.getOrNull(3)?.toIntOrNull() ?: 0
-
-        val currentDigits = currentVersionName.split(".").mapNotNull { it.takeWhile { char -> char.isDigit() }.toIntOrNull() }
-        val currentMajor = currentDigits.getOrElse(0) { 0 }
-        val currentMinor = currentDigits.getOrElse(1) { 0 }
-        val currentPatch = currentDigits.getOrElse(2) { 0 }
-
-        // Compare semantic version
-        if (remoteMajor > currentMajor) return true
-        if (remoteMajor < currentMajor) return false
-
-        if (remoteMinor > currentMinor) return true
-        if (remoteMinor < currentMinor) return false
-
-        if (remotePatch > currentPatch) return true
-        if (remotePatch < currentPatch) return false
-
-        // If semver is equal (e.g. 6.0 == 6.0), check build number from tag e.g. build-15-1
-        val buildMatch = Regex("""build-(\d+)""").find(tagName)
-        if (buildMatch != null) {
-            val remoteBuild = buildMatch.groupValues[1].toIntOrNull() ?: 0
-            if (remoteBuild > currentVersionCode) return true
-            if (remoteBuild <= currentVersionCode) return false
+    private fun extractVersionCode(tagName: String, notes: String, title: String): Int {
+        // 1. Look for explicit "versionCode": X or "versionCode = X" or "VersionCode: X" in notes or title
+        val explicitMatch = Regex("""(?i)(?:version_?code|build_?code|build_?number)\s*[:=]\s*(\d+)""").find("$notes $title $tagName")
+        if (explicitMatch != null) {
+            val code = explicitMatch.groupValues[1].toIntOrNull()
+            if (code != null && code > 0) return code
         }
 
-        // Exact match or older version -> not newer
-        return false
+        // 2. Look for "build-X" in tagName or title
+        val buildMatch = Regex("""(?i)build-(\d+)""").find("$tagName $title")
+        if (buildMatch != null) {
+            val code = buildMatch.groupValues[1].toIntOrNull()
+            if (code != null && code > 0) return code
+        }
+
+        // 3. Look for "vX.Y.Z" and compute numeric fallback if no explicit code
+        val semverMatch = Regex("""(?:v|V)?(\d+)(?:\.(\d+))?(?:\.(\d+))?""").find(tagName)
+        if (semverMatch != null) {
+            val major = semverMatch.groupValues.getOrNull(1)?.toIntOrNull() ?: 0
+            val minor = semverMatch.groupValues.getOrNull(2)?.toIntOrNull() ?: 0
+            val patch = semverMatch.groupValues.getOrNull(3)?.toIntOrNull() ?: 0
+            return (major * 1000) + (minor * 100) + patch
+        }
+
+        return 0
+    }
+
+    private fun extractVersionName(tagName: String, title: String): String {
+        val semverMatch = Regex("""(?:v|V)?(\d+\.\d+(?:\.\d+)?)""").find("$tagName $title")
+        if (semverMatch != null) {
+            return semverMatch.groupValues[1]
+        }
+        return tagName.removePrefix("v").removePrefix("V").ifBlank { currentVersionName }
     }
 
     suspend fun downloadUpdate(downloadUrl: String): Result<File> = withContext(Dispatchers.IO) {

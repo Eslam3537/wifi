@@ -19,6 +19,8 @@ class AppUpdateManagerTest {
             downloadUrl = "https://github.com/Eslam3537/wifi/releases/latest/download/app-debug.apk",
             sizeBytes = 15_000_000L,
             publishedAt = "2026-09-23T10:00:00Z",
+            remoteVersionCode = 10,
+            remoteVersionName = "1.0",
             isNewer = true
         )
 

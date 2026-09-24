@@ -38,10 +38,10 @@ import com.example.ui.theme.*
 
 enum class AppNavDestination(val titleRes: Int, val icon: ImageVector) {
     DASHBOARD(R.string.nav_dashboard, Icons.Default.Dashboard),
+    ROUTER(R.string.nav_router, Icons.Default.Router),
     DEVICES(R.string.nav_devices, Icons.Default.Devices),
     DIAGNOSTICS(R.string.nav_diagnostics, Icons.Default.Speed),
     SECURITY(R.string.nav_security, Icons.Default.Shield),
-    ROUTER(R.string.nav_router, Icons.Default.Router),
     COMPATIBILITY(R.string.nav_compatibility, Icons.Default.CheckCircleOutline),
     LOGS(R.string.nav_logs, Icons.Default.FormatListBulleted)
 }
@@ -301,7 +301,36 @@ fun MainScreen(
                     AppNavDestination.DEVICES -> DeviceListScreen(viewModel = viewModel)
                     AppNavDestination.DIAGNOSTICS -> DiagnosticsScreen(viewModel = viewModel)
                     AppNavDestination.SECURITY -> SecurityScreen(viewModel = viewModel)
-                    AppNavDestination.ROUTER -> RouterConfigScreen(viewModel = viewModel)
+                    AppNavDestination.ROUTER -> {
+                        var showClassicRouter by remember { mutableStateOf(false) }
+                        if (showClassicRouter) {
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text("اللوحة المتقدمة", style = MaterialTheme.typography.labelMedium)
+                                        TextButton(onClick = { showClassicRouter = false }) {
+                                            Text("العودة إلى Router Chef")
+                                        }
+                                    }
+                                }
+                                RouterConfigScreen(viewModel = viewModel)
+                            }
+                        } else {
+                            com.example.feature.router_control.ui.RouterControlScreen(
+                                onOpenClassicConfig = { showClassicRouter = true }
+                            )
+                        }
+                    }
                     AppNavDestination.COMPATIBILITY -> CompatibilityScreen(viewModel = viewModel)
                     AppNavDestination.LOGS -> ActivityLogScreen(viewModel = viewModel)
                 }

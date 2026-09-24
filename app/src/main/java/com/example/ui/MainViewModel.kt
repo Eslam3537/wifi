@@ -116,13 +116,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _isProbingRouter = MutableStateFlow(false)
     val isProbingRouter: StateFlow<Boolean> = _isProbingRouter.asStateFlow()
 
-    val routerRepository = RouterRepository()
+    val routerRepository = RouterRepository(application)
+    val routerDiscoveryState: StateFlow<RouterDiscoveryState> = routerRepository.discoveryState
+    val routerDetectedRouter: StateFlow<DetectedRouter?> = routerRepository.detectedRouter
     val routerConnectionState: StateFlow<RouterConnectionState> = routerRepository.connectionState
     val routerDashboardData: StateFlow<RouterDashboardData?> = routerRepository.dashboardData
     val routerCurrentSession: StateFlow<RouterSession?> = routerRepository.currentSession
     val routerLastErrorMessage: StateFlow<String?> = routerRepository.lastErrorMessage
     val isRouterBusy: StateFlow<Boolean> = routerRepository.isBusy
-    val isRouterDemoMode: StateFlow<Boolean> = routerRepository.isDemoMode
 
     private val _arpIntegrityReport = MutableStateFlow<ArpIntegrityReport?>(null)
     val arpIntegrityReport: StateFlow<ArpIntegrityReport?> = _arpIntegrityReport.asStateFlow()
@@ -209,6 +210,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             checkForAppUpdates(silent = true)
         }
     }
+
+    val currentVersionName: String = appUpdateManager.currentVersionName
+    val currentVersionCode: Int = appUpdateManager.currentVersionCode
 
     fun checkForAppUpdates(silent: Boolean = false) {
         viewModelScope.launch {
@@ -438,6 +442,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun discoverRouter(overrideGatewayIp: String? = null, autoLoginIfSaved: Boolean = true) {
+        viewModelScope.launch {
+            activityLogRepository.log(
+                component = "RouterDetector",
+                level = "INFO",
+                operation = "Auto-Discovery",
+                result = "Initiating router discovery on local network gateway..."
+            )
+            val result = routerRepository.discoverRouter(overrideGatewayIp, autoLoginIfSaved)
+            if (result.isSuccess) {
+                val detected = result.getOrThrow()
+                activityLogRepository.log(
+                    component = "RouterDetector",
+                    level = "INFO",
+                    operation = "Router Found",
+                    result = "Discovered ${detected.modelName} at ${detected.gatewayIp} (Supported: ${detected.isSupported})"
+                )
+            } else {
+                activityLogRepository.log(
+                    component = "RouterDetector",
+                    level = "WARN",
+                    operation = "Discovery Inconclusive",
+                    result = result.exceptionOrNull()?.localizedMessage ?: "No supported router detected at gateway."
+                )
+            }
+        }
+    }
+
     fun connectRouter(gatewayIp: String, username: String, password: String, saveCredentials: Boolean) {
         viewModelScope.launch {
             if (saveCredentials) {
@@ -472,18 +504,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     errorDetails = result.exceptionOrNull()?.localizedMessage
                 )
             }
-        }
-    }
-
-    fun connectRouterDemoMode() {
-        viewModelScope.launch {
-            routerRepository.connectDemoMode()
-            activityLogRepository.log(
-                component = "Router",
-                level = "INFO",
-                operation = "Router Demo Mode",
-                result = "Connected in interactive Huawei HG630 V2 simulation mode"
-            )
         }
     }
 

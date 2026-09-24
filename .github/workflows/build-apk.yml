@@ -56,28 +56,25 @@ jobs:
         with:
           gradle-version: '9.3.1'
 
-      - name: Create temporary debug keystore
+      - name: Set up persistent debug keystore
         run: |
           if [ -f ./debug.keystore ] && [ -s ./debug.keystore ]; then
-            echo "Existing ./debug.keystore detected. Skipping regeneration."
+            echo "Using existing ./debug.keystore from workspace."
+          elif [ -f ./debug.keystore.base64 ] && [ -s ./debug.keystore.base64 ]; then
+            echo "Decoding ./debug.keystore from ./debug.keystore.base64..."
+            base64 -d ./debug.keystore.base64 > ./debug.keystore
           else
-            echo "Generating temporary debug keystore using keytool..."
-            keytool -genkeypair -v \
-              -keystore ./debug.keystore \
-              -alias androiddebugkey \
-              -keypass android \
-              -storepass android \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -dname "CN=Android Debug,O=Android,C=US"
+            echo "Restoring persistent debug keystore from static signature..."
+            cat << 'EOF' | base64 -d > ./debug.keystore
+          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
+          EOF
           fi
 
           if [ ! -f ./debug.keystore ] || [ ! -s ./debug.keystore ]; then
-            echo "ERROR: ./debug.keystore could not be created or is empty."
+            echo "ERROR: ./debug.keystore could not be prepared or is empty."
             exit 1
           fi
-          echo "Temporary debug keystore ready."
+          echo "Persistent debug keystore verified and ready for signing."
 
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace --no-daemon
@@ -111,7 +108,7 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-      - name: Prepare APK release asset
+      - name: Prepare APK release asset & metadata
         id: prepare_asset
         run: |
           TEMP_ASSET_DIR="${RUNNER_TEMP}/release-assets"
@@ -128,9 +125,28 @@ jobs:
             APP_VER="6.0"
           fi
 
+          BASE_CODE=$(grep -E 'versionCode\s*=\s*' app/build.gradle.kts | head -n 1 | grep -oE '[0-9]+' || echo "6")
+          # Ensure versionCode strictly ascends with every CI build
+          CALCULATED_CODE=$(( BASE_CODE > GITHUB_RUN_NUMBER ? BASE_CODE : GITHUB_RUN_NUMBER ))
+
+          RELEASE_TAG="v${APP_VER}-build-${CALCULATED_CODE}"
+          DIRECT_APK_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/app-debug.apk"
+
+          cat << EOF > "$TEMP_ASSET_DIR/update-metadata.json"
+          {
+            "versionCode": ${CALCULATED_CODE},
+            "versionName": "${APP_VER}",
+            "downloadUrl": "${DIRECT_APK_URL}",
+            "releaseNotes": "NetManager Pro v${APP_VER} (Build #${CALCULATED_CODE})"
+          }
+          EOF
+
           echo "apk_path=$TEMP_ASSET_DIR/app-debug.apk" >> "$GITHUB_OUTPUT"
+          echo "meta_path=$TEMP_ASSET_DIR/update-metadata.json" >> "$GITHUB_OUTPUT"
           echo "app_version=$APP_VER" >> "$GITHUB_OUTPUT"
-          echo "Prepared release asset at: $TEMP_ASSET_DIR/app-debug.apk (Version: $APP_VER)"
+          echo "version_code=$CALCULATED_CODE" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "Prepared release assets at: $TEMP_ASSET_DIR (Version: $APP_VER, Code: $CALCULATED_CODE)"
 
       - name: Publish GitHub Release
         id: publish_release
@@ -141,54 +157,35 @@ jobs:
           gh --version
           
           ASSET_FILE="${{ steps.prepare_asset.outputs.apk_path }}"
+          META_FILE="${{ steps.prepare_asset.outputs.meta_path }}"
           APP_VER="${{ steps.prepare_asset.outputs.app_version }}"
-          if [ -z "$APP_VER" ]; then
-            APP_VER="6.0"
-          fi
+          VER_CODE="${{ steps.prepare_asset.outputs.version_code }}"
+          RELEASE_TAG="${{ steps.prepare_asset.outputs.release_tag }}"
 
-          if [ ! -f "$ASSET_FILE" ]; then
-            echo "ERROR: Asset file not found at $ASSET_FILE"
+          if [ ! -f "$ASSET_FILE" ] || [ ! -s "$ASSET_FILE" ]; then
+            echo "ERROR: Asset file not found or empty at $ASSET_FILE"
             exit 1
           fi
 
-          if [ ! -s "$ASSET_FILE" ]; then
-            echo "ERROR: Asset file is empty: $ASSET_FILE"
-            exit 1
-          fi
-
-          case "$ASSET_FILE" in
-            */app-debug.apk) ;;
-            *) echo "ERROR: Asset file name must be exactly app-debug.apk"; exit 1 ;;
-          esac
-
-          RELEASE_TAG="v${APP_VER}-build-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
-          RELEASE_TITLE="NetManager Pro v${APP_VER} (Build #${GITHUB_RUN_NUMBER})"
+          RELEASE_TITLE="NetManager Pro v${APP_VER} (Build #${VER_CODE})"
 
           NOTES=$(cat <<EOF
-          - NetManager Pro v${APP_VER} (Build #${GITHUB_RUN_NUMBER})
-          - Automatically generated debug APK
-          - In-App update & Huawei HG630 V2 simulation supported
-          - GitHub Actions run number: ${GITHUB_RUN_NUMBER}
-          - GitHub Actions run attempt: ${GITHUB_RUN_ATTEMPT}
+          ## NetManager Pro v${APP_VER}
+          - VersionCode: ${VER_CODE}
+          - VersionName: ${APP_VER}
+          - In-App upgrade compatible with persistent signing key
+          - Huawei HG630 V2 real integration & auto-discovery supported
           - Source commit SHA: ${GITHUB_SHA}
-          - APK intended for direct installation and testing
           EOF
           )
 
           gh release create "$RELEASE_TAG" \
             "$ASSET_FILE" \
+            "$META_FILE" \
             --target "${GITHUB_SHA}" \
             --title "$RELEASE_TITLE" \
             --notes "$NOTES" \
             --latest
-
-      - name: Wipe temporary keystore
-        if: always()
-        run: |
-          if [ -f ./debug.keystore ]; then
-            shred -u ./debug.keystore 2>/dev/null || rm -f ./debug.keystore
-            echo "Temporary keystore wiped."
-          fi
 
       - name: Report APK download result
         if: always()

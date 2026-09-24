@@ -272,6 +272,22 @@
     <string name="permissions_required_desc">يحتاج التطبيق لصلاحيات الموقع، والبحث عن أجهزة Wi-Fi القريبة، والإشعارات للتعرف على جميع أجهزة الشبكة وتأمين الاتصال.</string>
     <string name="grant_permissions_action">منح الصلاحيات الآن</string>
     <string name="permissions_granted_toast">تم منح جميع الصلاحيات المطلوبة بنجاح.</string>
+    <!-- Router Auto-Discovery & Detection Strings -->
+    <string name="detecting_router">جارٍ اكتشاف الراوتر…</string>
+    <string name="detecting_router_desc">جارٍ فحص بوابة الشبكة المحلية واكتشاف نوع الراوتر تلقائياً…</string>
+    <string name="router_found_title">تم العثور على الراوتر</string>
+    <string name="router_found_desc">تم التعرف على %1$s على العنوان %2$s</string>
+    <string name="router_not_detected_title">لم يتم اكتشاف راوتر مدعوم</string>
+    <string name="router_not_detected_desc">تعذر التعرف تلقائياً على راوتر مدعوم عند %1$s. يرجى التأكد من اتصال هاتفك بشبكة الواي فاي المحلية.</string>
+    <string name="connect_to_wifi_first">يرجى الاتصال بشبكة الواي فاي الخاصة بالراوتر أولاً.</string>
+    <string name="retry_discovery">إعادة البحث عن الراوتر</string>
+    <string name="manual_ip_entry">إدخال عنوان IP يدويًا</string>
+    <string name="auth_required_title">مطلوب تسجيل الدخول</string>
+    <string name="auth_required_desc">أدخل بيانات الدخول للتحكم في %1$s</string>
+    <string name="login_and_connect">تسجيل الدخول والاتصال</string>
+    <string name="unknown_router">راوتر غير معروف</string>
+    <string name="router_connecting_to">جارٍ الاتصال بـ %1$s…</string>
+    <string name="router_auto_detect_button">اكتشاف الراوتر تلقائياً</string>
     <!-- Router Demo Mode Strings -->
     <string name="router_demo_mode_button">وضع المحاكاة التجريبي</string>
     <string name="router_demo_mode_desc">استعراض لوحة تحكم راوتر HG630 V2 وإعدادات الواي فاي والأجهزة المتصلة</string>

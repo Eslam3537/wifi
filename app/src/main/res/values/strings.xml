@@ -273,6 +273,22 @@
     <string name="grant_permissions_action">Grant Permissions</string>
     <string name="permissions_granted_toast">All required permissions granted successfully.</string>
 
+    <!-- Router Auto-Discovery & Detection Strings -->
+    <string name="detecting_router">Detecting router…</string>
+    <string name="detecting_router_desc">Scanning local network gateway for supported routers…</string>
+    <string name="router_found_title">Router found</string>
+    <string name="router_found_desc">Identified %1$s at %2$s</string>
+    <string name="router_not_detected_title">Router not detected</string>
+    <string name="router_not_detected_desc">Could not identify a supported router at %1$s. Ensure you are connected to your home Wi-Fi.</string>
+    <string name="connect_to_wifi_first">Connect to your router\'s Wi-Fi network first.</string>
+    <string name="retry_discovery">Retry Discovery</string>
+    <string name="manual_ip_entry">Enter IP Manually</string>
+    <string name="auth_required_title">Authentication Required</string>
+    <string name="auth_required_desc">Enter admin credentials to connect to %1$s</string>
+    <string name="login_and_connect">Login &amp; Connect</string>
+    <string name="unknown_router">Unknown Router</string>
+    <string name="router_connecting_to">Connecting to %1$s…</string>
+    <string name="router_auto_detect_button">Auto-Detect Router</string>
     <!-- Router Demo Mode Strings -->
     <string name="router_demo_mode_button">Interactive Demo Mode</string>
     <string name="router_demo_mode_desc">Preview HG630 V2 dashboard, Wi-Fi configuration &amp; connected devices</string>

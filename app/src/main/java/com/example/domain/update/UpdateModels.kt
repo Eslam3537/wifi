@@ -9,6 +9,8 @@ data class AppReleaseInfo(
     val downloadUrl: String,
     val sizeBytes: Long,
     val publishedAt: String,
+    val remoteVersionCode: Int,
+    val remoteVersionName: String,
     val isNewer: Boolean
 )
 
@@ -21,3 +23,4 @@ sealed interface AppUpdateState {
     data class ReadyToInstall(val apkFile: File) : AppUpdateState
     data class Error(val message: String) : AppUpdateState
 }
+
